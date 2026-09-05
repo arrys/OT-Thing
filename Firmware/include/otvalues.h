@@ -167,12 +167,19 @@ public:
     void setTimeout();
     static OTValue* getSlaveValue(const OpenThermMessageID id);
     static OTValue* getMasterValue(const OpenThermMessageID id);
-    static class OTValueSlaveConfigMember* getSlaveConfig();
+    static OTValue* getroomUnitValue(const OpenThermMessageID id);
+    bool isSlaveValue() const;
+    bool isMasterValue() const;
+    bool isRoomunitValue() const;
+
     static void setTexhaustAsFloat(bool asFloat);
     void refreshDisc();
     bool isSet() const;
     bool hasReply() const;
     OpenThermMessageType getLastMsgType() const;
+    static class OTValueStatus *status; // for quick access
+    static class OTValueSlaveConfigMember *slaveConfig; // for quick access
+    static class OTValueVentSlaveConfigMember *ventSlaveConfig; // for quick access
 };
 
 class OTValueu16: public OTValue {
@@ -223,14 +230,13 @@ class OTValueFlags: public OTValue {
 protected:
     struct Flag {
         uint8_t bit {0};
-        const char *field {nullptr};
-        const char *discName {nullptr};
-        const char *haDevClass {nullptr};
+        PGM_P field {nullptr};
+        PGM_P discName {nullptr};
+        PGM_P haDevClass {nullptr};
     };
     uint8_t numFlags;
     const Flag *flagTable;
-    bool slave;
-    OTValueFlags(const OpenThermMessageID id, const int interval, const Flag *flagtable, const uint8_t numFlags, const bool slave);
+    OTValueFlags(const OpenThermMessageID id, const int interval, const Flag *flagtable, const uint8_t numFlags);
     void getValue(JsonVariant var) const override;
     bool sendDiscFlag(const Flag *flag, const bool enb);
     bool sendDiscovery() override;
@@ -251,6 +257,7 @@ public:
     bool getChActive(const uint8_t channel) const;
     bool getFlame() const;
     bool getDhwActive() const;
+    bool getCoolingActive() const;
 private:
     const char *CH2_MODE PROGMEM = "ch2_mode";
     const char *DHW_MODE PROGMEM = "dhw_mode";
@@ -352,8 +359,25 @@ protected:
 public:    
     OTValueSlaveConfigMember();
     bool hasDHW() const;
-    bool hasCh2() const;
+    bool hasCh(const uint8_t ch) const;
     bool hasCooling() const;
+};
+
+class OTValueVentSlaveConfigMember: public OTValueFlags {
+private:
+    void getValue(JsonVariant var) const override;
+    const Flag flags[3] PROGMEM = {
+        {8, "type",                     "System type",              nullptr},
+        {9, "bypass",                   "Bypass present",           nullptr},
+        {10, "speed_control",           "Speed control",            nullptr},
+    };
+protected:
+    bool sendDiscovery() override;
+public:    
+    OTValueVentSlaveConfigMember();
+    bool isHeatRecovery() const;
+    bool hasBypass() const;
+    bool hasVarSpeedControl() const;
 };
 
 
@@ -518,6 +542,8 @@ public:
 };
 
 
-extern OTValue *slaveValues[55];
+extern OTValue *slaveValues[56];
 extern OTValue *masterValues[20];
+extern OTValue *roomUnitValues[9];
+
 extern const char* getOTname(OpenThermMessageID id);

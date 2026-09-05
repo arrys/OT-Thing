@@ -9,6 +9,7 @@
 
 PGM_P STR_STATKEY_MASTER PROGMEM = "master";
 PGM_P STR_STATKEY_SLAVE PROGMEM = "slave";
+PGM_P STR_STATKEY_ROOMUNIT PROGMEM = "roomunit";
 PGM_P STR_STATKEY_ROOMCOMPINTEGRATOR PROGMEM = "roomcompInteg";
 PGM_P STR_STATKEY_ROOMTEMP PROGMEM = "roomtemp";
 PGM_P STR_STATKEY_ROOMSETPOINT PROGMEM = "roomsetpoint";
@@ -19,15 +20,20 @@ PGM_P STR_STATKEY_OVERRIDE_ON PROGMEM = "ovrdOn";
 PGM_P STR_STATKEY_OVERRIDE PROGMEM = "ovrd";
 PGM_P STR_STATKEY_ACTION PROGMEM = "action";
 PGM_P STR_STATKEY_DHW PROGMEM = "dhw";
+PGM_P STR_STATKEY_VENT PROGMEM = "vent";
 PGM_P STR_STATKEY_RETURNLIMITINTEGRATOR PROGMEM = "retLimitInteg";
 PGM_P STR_STATKEY_ROOMACTION PROGMEM = "roomAction";
 PGM_P STR_STATKEY_ROOMMODE PROGMEM = "roomMode";
 PGM_P STR_STATKEY_SUSPENDED PROGMEM = "suspended";
 PGM_P STR_STATKEY_SUMMERMODE PROGMEM = "summerMode";
 PGM_P STR_STATKEY_DHWBLOCKING PROGMEM = "dhwBlocking";
-PGM_P STR_STATKEY_COOLINGMODE PROGMEM = "coolingMode";
-PGM_P STR_STATKEY_COOLINGCTRL PROGMEM = "coolingCtrl";
 PGM_P STR_STATKEY_SETPOINT PROGMEM = "setpoint";
+PGM_P STR_STATKEY_COOLING PROGMEM = "cooling";
+PGM_P STR_STATKEY_FLOWSETPOINT PROGMEM = "flowsetpoint";
+PGM_P STR_STATKEY_ENABLE PROGMEM = "enable";
+PGM_P STR_STATKEY_OPENBYPASS PROGMEM = "openBypass";
+PGM_P STR_STATKEY_AUTOBYPASS PROGMEM = "autoBypass";
+PGM_P STR_STATKEY_FREEVENTENABLE PROGMEM = "freeVentEnable";
 
 PGM_P STR_STATKEY_FLAMESTATS PROGMEM = "flameStats";
 PGM_P STR_STATKEY_FLAMESTATS_DUTY PROGMEM = "duty";
@@ -36,8 +42,6 @@ PGM_P STR_STATKEY_FLAMESTATS_ONTIME PROGMEM = "onTime";
 PGM_P STR_STATKEY_FLAMESTATS_OFFTIME PROGMEM = "offTime";
 PGM_P STR_STATKEY_FLAMESTATS_CURRENTONTIME PROGMEM = "currentOnTime";
 PGM_P STR_STATKEY_FLAMESTATS_LASTONTIME PROGMEM = "lastOnTime";
-
-PGM_P STR_STATKEY_FLOWSET_TEMP PROGMEM = "flowSetTemp";
 
 DevStatus devstatus;
 
@@ -61,8 +65,7 @@ void DevStatus::unlock() {
     xSemaphoreGive(mutex);
 }
 
- void DevStatus::buildDoc(JsonDocument &doc) {
-    doc.clear();
+ void DevStatus::buildDoc(JsonObject doc) {
     doc[F("runtime")] = millis() / 1000UL;
     doc[F("freeHeap")] = ESP.getFreeHeap();
     doc[F("largestBlock")] = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
@@ -93,8 +96,7 @@ void DevStatus::unlock() {
     jmqtt[F("basetopic")] = mqtt.getBaseTopic();
     jmqtt[F("numDisc")] = mqtt.getNumDisc();
 
-    JsonObject jot = doc.as<JsonObject>();
-    otcontrol.getJson(jot);
+    otcontrol.getJson(doc);
 
     double outT;
     if (outsideTemp.get(outT, true))

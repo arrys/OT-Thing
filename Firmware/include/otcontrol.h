@@ -1,10 +1,13 @@
 #pragma once
 
 #include <OpenTherm.h>
+#include <map>
 #include "ArduinoJson.h"
 #include "util.h"
 #include "masterrequests.h"
 #include "CHcontrol.h"
+#include "dhwControl.h"
+#include "vent.h"
 #include "flamestats.h"
 
 const uint8_t NUM_HEATCIRCUITS = 2;
@@ -17,8 +20,12 @@ struct SlaveRequestStruct {
     uint16_t dataResp;
 };
 
+extern struct OTTestItem {
+    OpenThermMessageID id;
+    uint16_t value;
+} loopbackTestData[51];
+
 class OTControl {
-friend OTWriteRequest;
 friend class BrandInfo;
 friend class SemMaster;
 public:
@@ -32,8 +39,6 @@ public:
 private:
     void OnRxMaster(const unsigned long msg, const OpenThermResponseStatus status);
     void OnRxSlave(const unsigned long msg, const OpenThermResponseStatus status);
-    bool setMasterVal(const unsigned long msg);
-    void sendRequest(const char source, const unsigned long msg);
     void masterPinIrq();
     void slavePinIrq();
     uint16_t tmpToData(const double tmpf);
@@ -41,7 +46,6 @@ private:
     unsigned long buildBrandResponse(const OpenThermMessageID id, const String &str, const uint8_t idx);
     bool sendChDiscoveries(const uint8_t ch, const bool en);
     unsigned long lastBoilerStatus;
-    unsigned long lastVentStatus;
     enum OTMode: int8_t {
         OTMODE_BYPASS = 0,
         OTMODE_MASTER = 1,
@@ -59,36 +63,20 @@ private:
     void loopRetLimit(const uint8_t ch);
     unsigned long nextPiCtrl { 0 };
     struct {
-        bool ventEnable;
-        bool openBypass;
-        bool autoBypass;
-        bool freeVentEnable;
-        uint8_t setpoint;
-    } ventCtrl;
-    struct {
         bool otc;
         double chOffTemp;
     } boilerConfig;
     struct {
-        bool dhwOn;
-        double dhwTemp;
         uint8_t maxModulation;
         bool summerMode;
         bool dhwBlocking;
         bool coolOn;
         uint8_t coolingCtrl;
     } boilerCtrl;
-    struct {
-        bool active;
-        double temp;
-        double on;
-    } dhwOvrd;
     FlameStats flameStats;
     bool discFlag {true};
-    OTWRSetDhw setDhwRequest;
     OTWRSetBoilerTemp setBoilerRequest[NUM_HEATCIRCUITS];
     OTWRMasterConfigMember setMasterConfigMember;
-    OTWRSetVentSetpoint setVentSetpointRequest;
     OTWRSetRoomTemp setRoomTemp[NUM_HEATCIRCUITS];
     OTWRSetRoomSetPoint setRoomSetPoint[NUM_HEATCIRCUITS];
     OTWRSetOutsideTemp setOutsideTemp;
@@ -120,26 +108,26 @@ private:
     bool init {false};
     bool noDhwSet;
 public:
+    std::map<OpenThermMessageID, uint16_t> masterTestValues;
+    DHWControl dhwControl;
+    VentControl ventCtrl;
     OTControl();
     void begin();
     void loop();
     bool slaveRequest(SlaveRequestStruct &srs);
+    void sendRequest(const char source, const unsigned long msg);
     void getJson(JsonObject &obj);
     void setConfig(JsonObject &config);
-    void setDhwTemp(const double temp);
     void setChTemp(const double temp, const uint8_t channel);
     void setChCtrlMode(const HADiscovery::ClimateMode mode, const uint8_t channel);
     void setDhwCtrlMode(const HADiscovery::ClimateMode mode);
-    void setCoolingMode(const HADiscovery::ClimateMode mode);
+    void setCoolingMode(const bool on);
     void setCoolingCtrl(const int ctrl);
     bool sendDiscovery();
     bool sendCapDiscoveries();
     void forceFlowCalc(const uint8_t channel);
-    void setVentSetpoint(const uint8_t v);
-    void setVentEnable(const bool en);
     void setOverrideChOn(const bool ovrd, const uint8_t channel);
     void setOverrideChFlow(const bool ovrd, const uint8_t channel);
-    void setOverrideDhw(const bool ovrd);
     void setMaxMod(const int mm);
     void setRoomMode(const HADiscovery::ClimateMode mode, const uint8_t channel);
     void setFlowMin(const double flowMin, const uint8_t channel);
@@ -147,8 +135,6 @@ public:
     void setSummerMode(const bool summerMode);
     void setDhwBlocking(const bool dhwBlocking);
     bool getFlame() const;
-    bool getDhwActive() const;
-    bool getChActive(const uint8_t channel) const;
 };
 
 extern OTControl otcontrol;

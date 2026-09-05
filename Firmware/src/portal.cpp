@@ -2,8 +2,10 @@
 #include <Update.h>
 #include <ArduinoJson.h>
 #include <esp_system.h>
+#include <esp_heap_caps.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <AsyncJson.h>
 #include <WiFi.h>
 #include "portal.h"
 #include "devstatus.h"
@@ -11,12 +13,12 @@
 #include "html.h"
 #include "otcontrol.h"
 #include "otvalues.h"
+#include "netw.h"
 
 static const char APP_JSON[] PROGMEM = "application/json";
 static const char SESSION_COOKIE[] PROGMEM = "OTSESSID";
 static const uint32_t SESSION_TTL_MS = 30UL * 60UL * 1000UL;
-static const IPAddress apAddress(4, 3, 2, 1);
-static const IPAddress apMask(255, 255, 255, 0);
+
 Portal portal;
 static AsyncWebServer websrv(80);
 AsyncWebSocket ws("/ws");
@@ -30,7 +32,7 @@ Portal::Portal():
 }
 
 String Portal::createSessionToken() const {
-    static const char hex[] = "0123456789abcdef";
+    String hex(F("0123456789abcdef"));
     char buf[33] = {0};
     for (int i=0; i<16; i++) {
         uint8_t b = (uint8_t) (esp_random() & 0xFF);
@@ -108,24 +110,15 @@ void Portal::clearSession(AsyncWebServerRequest *request) {
 void Portal::begin(bool configMode) {
     configModeActive = configMode;
 
-    if (configMode) {
-        WiFi.persistent(false);
-        WiFi.softAPConfig(apAddress, apAddress, apMask);
-        WiFi.softAP(F(AP_SSID), F(AP_PASSWORD));
-        
-        if (WiFi.SSID().isEmpty())
-            WiFi.mode(WIFI_AP);
-        else
-            WiFi.mode(WIFI_AP_STA);
-
-        WiFi.setAutoReconnect(false);
-        WiFi.persistent(true);
-    }
-
     websrv.begin();
     websrv.addHandler(&ws);
 
     websrv.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
+        if (netw.isScanning) {
+            request->send(503); // service unavailable
+            return;
+        }
+
         #ifdef DEBUG
         if (LittleFS.exists(F("/index.html"))) {
             request->send(LittleFS, F("/index.html"), F("text/html"));
@@ -137,6 +130,20 @@ void Portal::begin(bool configMode) {
         response->addHeader(F("Content-Encoding"), F("gzip"));
         response->addHeader(F("Cache-Control"), F("no-cache"));
         response->addHeader(F("Vary"), F("Accept-Encoding"));
+        request->send(response);
+    });
+
+    websrv.onNotFound([this](AsyncWebServerRequest *request) {
+        if (!configModeActive) {
+            request->send(404);
+            return;
+        }
+
+        request->send(404);
+        return;
+
+        AsyncWebServerResponse *response = request->beginResponse(302);
+        response->addHeader(F("Location"), String(F("http://")) + WiFi.softAPIP().toString() + F("/"));
         request->send(response);
     });
 
@@ -187,7 +194,7 @@ void Portal::begin(bool configMode) {
         jobj[F("configured")] = configured;
         jobj[F("loggedIn")] = (configModeActive || !configured) ? true : hasValidSession(request);
         jobj[F("bypass")] = configModeActive;
-        AsyncResponseStream *response = request->beginResponseStream(FPSTR(APP_JSON));
+        AsyncResponseStream *response = request->beginResponseStream(FPSTR(APP_JSON), 256);
         serializeJson(doc, *response);
         request->send(response);
     });
@@ -256,7 +263,7 @@ void Portal::begin(bool configMode) {
         int n = WiFi.scanComplete();
         jobj[F("status")] = n;
         if (n == -2)
-            WiFi.scanNetworks(true);
+            netw.startScan();
         else
             if (n >= 0) {
                 JsonArray results = jobj[F("results")].to<JsonArray>();
@@ -265,6 +272,18 @@ void Portal::begin(bool configMode) {
                     result[F("ssid")] = WiFi.SSID(i);
                     result[F("rssi")] = WiFi.RSSI(i);
                     result[F("channel")] = WiFi.channel(i);
+                    result[F("encType")] = WiFi.encryptionType(i);
+                    uint8_t bssid[6];
+                    WiFi.BSSID(i, bssid);
+                    String bssidStr;
+                    for (int bi=0; bi<sizeof(bssid); bi++) {
+                        if (!bssidStr.isEmpty())
+                            bssidStr += ':';
+                        if (bssid[bi] < 16)
+                            bssidStr += '0';
+                        bssidStr += String(bssid[bi], 16);
+                    }
+                    result[F("bssid")] = bssidStr;
                 }
                 WiFi.scanDelete();
             }
@@ -297,10 +316,16 @@ void Portal::begin(bool configMode) {
         if (!ensureAuthorized(request))
             return;
 
-        JsonDocument doc;
-        devstatus.buildDoc(doc);
-        AsyncResponseStream *response = request->beginResponseStream(FPSTR(APP_JSON));
-        serializeJson(doc, *response);
+        if (netw.isScanning) {
+            request->send(503); // service unavailable
+            return;
+        }
+
+        AsyncJsonResponse *response = new AsyncJsonResponse();
+        JsonObject root = response->getRoot().to<JsonObject>();
+
+        devstatus.buildDoc(root);
+        response->setLength();
         request->send(response);
     });
 
@@ -308,17 +333,22 @@ void Portal::begin(bool configMode) {
         if (!ensureAuthorized(request))
             return;
 
-        JsonDocument doc;
-        JsonObject jSlave = doc[FPSTR(STR_STATKEY_SLAVE)].to<JsonObject>();
+        AsyncJsonResponse *response = new AsyncJsonResponse();
+        JsonObject root = response->getRoot().to<JsonObject>();
+
+        JsonObject jSlave = root[FPSTR(STR_STATKEY_SLAVE)].to<JsonObject>();
             for (auto *valobj: slaveValues)
                 valobj->getStatus(jSlave);
 
-        JsonObject jMaster = doc[FPSTR(STR_STATKEY_MASTER)].to<JsonObject>();
+        JsonObject jMaster = root[FPSTR(STR_STATKEY_MASTER)].to<JsonObject>();
             for (auto *valobj: masterValues)
                 valobj->getStatus(jMaster);
 
-        AsyncResponseStream *response = request->beginResponseStream(FPSTR(APP_JSON));
-        serializeJson(doc, *response);
+        JsonObject jRoomunit = root[FPSTR(STR_STATKEY_ROOMUNIT)].to<JsonObject>();
+            for (auto *valobj: roomUnitValues)
+                valobj->getStatus(jRoomunit);
+
+        response->setLength();
         request->send(response);
     });
 
@@ -436,14 +466,125 @@ void Portal::begin(bool configMode) {
         }
         request->send(200);
     });
+
+    websrv.on(PSTR("/testdata"), HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if (!ensureAuthorized(request))
+            return;
+
+        JsonDocument doc;
+        JsonObject jobj = doc.to<JsonObject>();
+        for (int i=0; i<sizeof(loopbackTestData)/sizeof(loopbackTestData[0]); i++) {
+            PGM_P name = getOTname(loopbackTestData[i].id);
+            if (name != nullptr)
+                jobj[FPSTR(name)] = OpenTherm::getUInt(loopbackTestData[i].value);
+        }
+
+        for (auto item: otcontrol.masterTestValues) {
+            PGM_P name = getOTname(item.first);
+            if (name != nullptr)
+                jobj[FPSTR(name)] = OpenTherm::getUInt(item.second);
+        }
+        AsyncResponseStream *response = request->beginResponseStream(FPSTR(APP_JSON));
+        serializeJson(doc, *response);
+        request->send(response);
+    });
+
+    websrv.on(PSTR("/testdata"), HTTP_POST, 
+        [this] (AsyncWebServerRequest *request) {
+        },
+        [] (AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final) {
+        },
+        [this] (AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+            if (!ensureAuthorized(request))
+                return;
+
+            static String buf;
+            if (!index)
+                buf.clear();
+
+            buf.concat((const char*) data, len);
+            Serial.printf("/testdata POST chunk: index=%u len=%u total=%u bufLen=%u final=%s\n",
+                (unsigned) index,
+                (unsigned) len,
+                (unsigned) total,
+                (unsigned) buf.length(),
+                "n/a");
+
+            if (buf.length() == total) {
+                JsonDocument doc;
+                DeserializationError err = deserializeJson(doc, buf);
+                if (err != DeserializationError::Ok) {
+                    buf.clear();
+                    request->send(400);
+                    return;
+                }
+
+                if (!doc.is<JsonObject>()) {
+                    buf.clear();
+                    request->send(400);
+                    return;
+                }
+
+                bool updated = false;
+                {
+                    JsonObjectConst obj = doc.as<JsonObjectConst>();
+                    for (JsonPairConst kv: obj) {
+                        String name = kv.key().c_str();
+                        JsonVariantConst jsonValue = kv.value();
+
+                        if (jsonValue.isNull()) {
+                            continue;
+                        }
+
+                        auto decodeValue = [&] (JsonVariantConst valueVariant, uint16_t &decodedValue) -> bool {
+                            if (valueVariant.isNull())
+                                return false;
+
+                            if (valueVariant.is<String>()) {
+                                String hexValue = valueVariant.as<String>();
+                                decodedValue = (uint16_t) strtoul(hexValue.c_str(), nullptr, 16);
+                                return true;
+                            }
+
+                            if (valueVariant.is<int>() || valueVariant.is<long>() || valueVariant.is<unsigned int>() || valueVariant.is<unsigned long>()) {
+                                decodedValue = valueVariant.as<uint16_t>();
+                                return true;
+                            }
+
+                            return false;
+                        };
+
+                        for (int i=0; i<sizeof(loopbackTestData)/sizeof(loopbackTestData[0]); i++) {
+                            PGM_P itemName = getOTname(loopbackTestData[i].id);
+                            if (name != FPSTR(itemName))
+                                continue;
+
+                            uint16_t value = 0;
+
+                            if (!decodeValue(jsonValue, value))
+                                break;
+
+                            loopbackTestData[i].value = value;
+                            updated = true;
+                            break;
+                        }
+                    }
+                }
+                
+                buf.clear();
+                request->send(updated ? 200 : 400);
+            }
+        }
+    );
 }
 
 void Portal::loop() {
     if (reboot) {
+        ws.closeAll(0, "reboot");
+        websrv.end();
         delay(500);
         ESP.restart();
     }
-
     ws.cleanupClients();
 }
 

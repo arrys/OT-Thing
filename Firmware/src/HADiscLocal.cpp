@@ -8,11 +8,13 @@ const char *DEVNAME PROGMEM = "OTthing";
 const char *MANUFACTURER PROGMEM = "Seegel Systeme";
 
 OTThingHADiscovery::OTThingHADiscovery() {
-    devName = FPSTR(DEVNAME);
     manufacturer = MANUFACTURER;
 }
 
 void OTThingHADiscovery::begin() {
+    // set here, not in the ctor: static init order of devName is undefined
+    devName = FPSTR(DEVNAME);
+
     String shortMac = WiFi.macAddress();
     shortMac.remove(0, 9);
     int idx;
@@ -38,4 +40,11 @@ bool OTThingHADiscovery::publish(const bool avail) {
     }
 
     return mqtt.publish(topic, doc, true);
+}
+
+HADiscovery::ClimateAction OTThingHADiscovery::calcAction(const bool active, const bool enabled, const HADiscovery::ClimateAction actAction) {
+    if (active)
+        return actAction;
+
+    return enabled ? HADiscovery::ACTION_IDLE : HADiscovery::ACTION_OFF;
 }

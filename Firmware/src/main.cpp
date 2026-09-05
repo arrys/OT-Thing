@@ -1,8 +1,4 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#include <Ticker.h>
-#include <ImprovWiFiBLE.h>
 #include "hwdef.h"
 #include "portal.h"
 #include "otcontrol.h"
@@ -17,15 +13,14 @@
 #include "util.h"
 #include "esp_task_wdt.h"
 #include "auxInput.h"
+#include "netw.h"
+#include "StatusLed.h"
 
 #ifdef DEBUG
     #include <ArduinoOTA.h>
 #endif
 
-Ticker statusLedTicker;
-volatile uint16_t statusLedData = 0x8000;
 bool configMode = false;
-ImprovWiFiBLE improvBle;
 
 #ifdef DEBUG
 // Required for DEBUG build: definitions for BLE externs referenced by command.cpp.
@@ -33,97 +28,32 @@ NimBLECharacteristic *bleSerialTx = nullptr;
 volatile bool bleClientConnected = false;
 #endif
 
-static bool improvConnectWifi(const char *ssid, const char *password) {
-    WiFi.disconnect();
-    WiFi.persistent(true);
-    WiFi.setAutoReconnect(true);
-    WiFi.begin(ssid, password);
-
-    uint8_t attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-        delay(500);
-        esp_task_wdt_reset();
-        yield();
-        attempts++;
-    }
-
-    return WiFi.status() == WL_CONNECTED;
-}
-
-
-void statusLedLoop() {
-    static uint16_t mask = 0x8000;
-
-    setLedStatus((statusLedData & mask) != 0);
-    mask >>= 1;
-    if (!mask)
-        mask = 0x8000;
-}
-
-void wifiEvent(WiFiEvent_t event) {
-    switch (event) {
-    case ARDUINO_EVENT_WIFI_STA_GOT_IP: {
-        String hn = devconfig.getHostname();
-        WiFi.setHostname(hn.c_str());
-        MDNS.begin(hn.c_str());
-        publishMdnsServices();
-        break;
-    }
-
-    case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        devstatus.numWifiDiscon++;
-        WiFi.reconnect();
-        break;
-
-    default:
-        break;
-    }
-}
 
 void setup() {
-    pinMode(GPIO_STATUS_LED, OUTPUT);
+    statusLed.begin();
     pinMode(GPIO_CONFIG_BUTTON, INPUT);
-    
-    setLedStatus(false);
-
-    otcontrol.begin();
-
-    statusLedTicker.attach(0.2, statusLedLoop);
-
-    configMode = digitalRead(GPIO_CONFIG_BUTTON) == 0;
-    if (configMode)
-        statusLedData = 0xA000;
+    pinMode(GPIO_BYPASS_RELAY, INPUT_PULLUP);
 
     Serial.begin();
     Serial.setTxTimeoutMs(100);
 
-    if (configMode) {
-        String improvUrl = F("http://");
-        improvUrl += HOSTNAME;
-        improvUrl += F(".local/");
+    otcontrol.begin();
 
-        improvBle.setDeviceInfo(
-            ImprovTypes::ChipFamily::CF_ESP32_C3,
-            HOSTNAME,
-            BUILD_VERSION,
-            HOSTNAME,
-            improvUrl.c_str()
-        );
-        improvBle.setCustomConnectWiFi(improvConnectWifi);
-    }
+    configMode = digitalRead(GPIO_CONFIG_BUTTON) == 0;
+    if (configMode)
+        statusLed.set(StatusLed::LED_CONFIG);
     
-    WiFi.onEvent(wifiEvent);
-    WiFi.setSleep(false);
-    WiFi.begin();
+    devconfig.begin();
+    netw.begin(configMode);
     
     AddressableSensor::begin();
     BLESensor::begin();
     haDisc.begin();
     mqtt.begin();
-    devconfig.begin();
     configTime(devconfig.getTimezone(), 3600, PSTR("pool.ntp.org"));
 
     portal.begin(configMode);
+
     command.begin();
 
     esp_task_wdt_add(NULL);
@@ -139,11 +69,13 @@ void loop() {
     static unsigned long btnDown = 0;
     if (digitalRead(GPIO_CONFIG_BUTTON) == 0) {
         if ((now - btnDown) > 10000) {
-            statusLedTicker.detach();
+            statusLed.end();
             setLedStatus(true);
             devconfig.remove();
+            netw.end();
             WiFi.persistent(true);
             WiFi.disconnect(true, true);
+            esp_wifi_restore();
             while (digitalRead(GPIO_CONFIG_BUTTON) == 0) {
                 esp_task_wdt_reset();
                 yield();
@@ -156,6 +88,13 @@ void loop() {
     else
         btnDown = now;
 
+    static bool oldBootButtonState = false;
+
+    if (oldBootButtonState != (digitalRead(GPIO_BOOT_BUTTON) == 0)) {
+        netw.startWps();
+        oldBootButtonState = digitalRead(GPIO_BOOT_BUTTON) == 0;
+    }
+
 #ifdef DEBUG
     ArduinoOTA.handle();
 #endif
@@ -166,6 +105,9 @@ void loop() {
     Sensor::loopAll();
     devconfig.loop();
     OneWireNode::loop();
+
+    if (configMode)
+        netw.loop();
 
     for (int i=0; i<sizeof(auxInput) / sizeof(auxInput[0]); i++)
         auxInput[i].loop();
