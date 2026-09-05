@@ -1923,6 +1923,7 @@
         <symbol id="ui-icon-fall" viewBox="0 0 24 24"><path d="M12 3v18m-6-6 6 6 6-6"/></symbol>
         <symbol id="ui-icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></symbol>
         <symbol id="ui-icon-pin" viewBox="0 0 24 24"><path d="m9 3 12 12-4 1-3 3-3-3-7 7 7-7-3-3 3-3Z"/></symbol>
+        <symbol id="ui-icon-wind" viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h5a3 3 0 1 1-3 3"/></symbol>
     </svg>
     <div id="stickydiv">
         <div id="nocon" hidden>No connection to device...</div>
@@ -1969,35 +1970,35 @@
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Venting</span>
-                            <span class="state-icon is-unknown" id="stateVent" title="unknown" aria-label="Ventilation status">…</span>
+                            <span class="state-icon is-unknown" id="stateVent" title="unknown" aria-label="Ventilation status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Free vent</span>
-                            <span class="state-icon is-unknown" id="stateFreeVent" title="unknown" aria-label="Free ventilation status">…</span>
+                            <span class="state-icon is-unknown" id="stateFreeVent" title="unknown" aria-label="Free ventilation status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Bypass</span>
-                            <span class="state-icon is-unknown" id="stateBypass" title="unknown" aria-label="Bypass status">…</span>
+                            <span class="state-icon is-unknown" id="stateBypass" title="unknown" aria-label="Bypass status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Auto by</span>
-                            <span class="state-icon is-unknown" id="stateAutoBypass" title="unknown" aria-label="Automatic bypass status">…</span>
+                            <span class="state-icon is-unknown" id="stateAutoBypass" title="unknown" aria-label="Automatic bypass status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Service</span>
-                            <span class="state-icon is-unknown" id="stateVentDiag" title="unknown" aria-label="Ventilation diagnostic/service value">…</span>
+                            <span class="state-icon is-unknown" id="stateVentDiag" title="unknown" aria-label="Ventilation diagnostic/service value"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-vent">
                             <span class="state-label">Fault</span>
-                            <span class="state-icon is-unknown" id="stateVentFault" title="unknown" aria-label="Ventilation fault status">…</span>
+                            <span class="state-icon is-unknown" id="stateVentFault" title="unknown" aria-label="Ventilation fault status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-heat">
                             <span class="state-label">Service</span>
-                            <span class="state-icon is-unknown" id="stateDiag" title="unknown" aria-label="Diagnostic/service value">…</span>
+                            <span class="state-icon is-unknown" id="stateDiag" title="unknown" aria-label="Diagnostic/service value"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item app-heat">
                             <span class="state-label">Fault</span>
-                            <span class="state-icon is-unknown" id="stateFault" title="unknown" aria-label="Fault status">…</span>
+                            <span class="state-icon is-unknown" id="stateFault" title="unknown" aria-label="Fault status"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
                         </div>
                         <div class="state-item">
                             <span class="state-label">MQTT</span>
@@ -2123,12 +2124,12 @@
                         <div class="metric-value"><span id="heroVentSet">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="ventStepGroup" hidden>
-                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(-1)">▼</button>
-                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(1)">▲</button>
+                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(-1)" aria-label="Decrease ventilation setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(1)" aria-label="Increase ventilation setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
-                                <button class="mode-btn" id="btnVentModeOff" type="button" onclick="setVentMode(false)" title="set ventilation to off">⏻</button>
-                                <button class="mode-btn" id="btnVentModeOn" type="button" onclick="setVentMode(true)" title="set ventilation to on">⏽</button>
+                                <button class="mode-btn" id="btnVentModeOff" type="button" onclick="setVentMode(false)" title="set ventilation to off" aria-label="set ventilation to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
+                                <button class="mode-btn" id="btnVentModeOn" type="button" onclick="setVentMode(true)" title="set ventilation to on" aria-label="set ventilation to on"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-on"></use></svg></button>
                             </div>
                         </div>
                     </div>
@@ -2325,60 +2326,60 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Flow temperature</h5>
-                        <span class="statusvalue" field="slave.flow_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t" unit="C"></span>
                     </div>
                     
                     <div class="statusfield">
                         <h5>Flow temperature 2</h5>
-                        <span class="statusvalue" field="slave.flow_t2" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t2" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW temperature 2</h5>
-                        <span class="statusvalue" field="slave.dhw_t2" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.dhw_t2" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaust temperature</h5>
-                        <span class="statusvalue" field="slave.exhaust_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Outside temperature</h5>
-                        <span class="statusvalue" field="slave.outside_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.outside_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Return temperature</h5>
-                        <span class="statusvalue" field="slave.return_t" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.return_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room override temp.</h5>
-                        <span class="statusvalue" field="slave.tr_override" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.tr_override" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room override temp. 2</h5>
-                        <span class="statusvalue" field="slave.tr_override2" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.tr_override2" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Supply inlet temp.</h5>
-                        <span class="statusvalue" field="slave.supply_inlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.supply_inlet_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Supply outlet temp.</h5>
-                        <span class="statusvalue" field="slave.supply_outlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.supply_outlet_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaut inlet temp.</h5>
-                        <span class="statusvalue" field="slave.exhaust_inlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_inlet_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaut outlet temp.</h5>
-                        <span class="statusvalue" field="slave.exhaust_outlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_outlet_t" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heat exchanger temp.</h5>
-                        <span class="statusvalue" field="slave.boiler_heat_ex_t" unit="°C"></span>
+                        <span class="statusvalue" field="slave.boiler_heat_ex_t" unit="C"></span>
                     </div>
                 </div>
                 <div class="flexline">
@@ -2391,7 +2392,7 @@
                         <span class="statusvalue" field="slave.rel_vent" unit="%"></span>
                     </div>
                     <div class="statusfield">
-                        <h5>&#x2300; flame ratio (3 h)</h5>
+                        <h5>Average flame ratio (3 h)</h5>
                         <span class="statusvalue" field="slave.flameStats.duty" unit="%"></span>
                     </div>
                     <div class="statusfield">
@@ -2427,11 +2428,11 @@
                         <span class="statusvalue" field="slave.flameStats.lastOnTime" unit="min"></span>
                     </div>
                     <div class="statusfield">
-                        <h5>&#x2300; flametime (10 cycles)</h5>
+                        <h5>Average flametime (10 cycles)</h5>
                         <span class="statusvalue" field="slave.flameStats.onTime" unit="min"></span>
                     </div>
                     <div class="statusfield">
-                        <h5>&#x2300;pausetime (10 cycles)</h5>
+                        <h5>Average pausetime (10 cycles)</h5>
                         <span class="statusvalue" field="slave.flameStats.offTime" unit="min"></span>
                     </div>
                     <div class="statusfield">
@@ -2480,7 +2481,7 @@
                     </div>
                     <div class="statusfield">
                         <h5>Flame current</h5>
-                        <span class="statusvalue" field="slave.flame_current" unit="µA"></span>
+                        <span class="statusvalue" field="slave.flame_current" unit="uA"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OEM fault code</h5>
@@ -2511,7 +2512,7 @@
                         <span class="statusvalue" field="slave.supply_fan_speed" unit="rpm"></span>
                     </div>
                     <div class="statusfield">
-                        <h5>&#x2300; burner starts (3 h)</h5>
+                        <h5>Average burner starts (3 h)</h5>
                         <span class="statusvalue" field="slave.flameStats.freq" unit="/h"></span>
                     </div>
                     <div class="statusfield">
@@ -2577,19 +2578,19 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>DHW min. temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_bounds.min" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_bounds.min" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW max. temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_bounds.max" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_bounds.max" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Min. flow temperature</h5>
-                        <span class="statusvalue" field="slave.ch_bounds.min" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.ch_bounds.min" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Max. flow temperature</h5>
-                        <span class="statusvalue" field="slave.ch_bounds.max" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.ch_bounds.max" unit="C"></span>
                     </div>
                 </div>
                 <div class="flexline">
@@ -2687,39 +2688,39 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Flow set temperature</h5>
-                        <span class="statusvalue" field="master.ch_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.ch_set_t.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Flow set temperature 2</h5>
-                        <span class="statusvalue" field="master.ch_set_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.ch_set_t2.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW set temperature</h5>
-                        <span class="statusvalue" field="master.dhw_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.dhw_set_t.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>max. CH setpoint</h5>
-                        <span class="statusvalue" field="master.max_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.max_set_t.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room temperature</h5>
-                        <span class="statusvalue" field="master.room_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_t.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room set temperature</h5>
-                        <span class="statusvalue" field="master.room_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_set_t.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room temperature 2</h5>
-                        <span class="statusvalue" field="master.room_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_t2.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room set temperature 2</h5>
-                        <span class="statusvalue" field="master.room_set_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_set_t2.data" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>outside temp.</h5>
-                        <span class="statusvalue" field="master.outside_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.outside_t.data" unit="C"></span>
                     </div>
                 </div>
                 <div class="flexline">
@@ -2785,18 +2786,18 @@
                         <div class="infobox">
                             Typical system temperatures supply/return:
                             <ul>
-                                <li>Old standard: 90 &deg;C / 70 &deg;C</li>
-                                <li>New standard: 75 &deg;C / 65 &deg;C</li>
-                                <li>Low-temperature: 70 &deg;C / 50 &deg;C</li>
-                                <li>Condensing boiler: 60 &deg;C / 45 &deg;C</li>
-                                <li>Condensing boiler: 45 &deg;C / 35 &deg;C</li>
+                                <li>Old standard: 90 C / 70 C</li>
+                                <li>New standard: 75 C / 65 C</li>
+                                <li>Low-temperature: 70 C / 50 C</li>
+                                <li>Condensing boiler: 60 C / 45 C</li>
+                                <li>Condensing boiler: 45 C / 35 C</li>
                             </ul>
                             <p>Source: <a href="www.bosy-online.de">www.bosy-online.de</a></p>
                         </div>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
-                                <span class="unit">&deg;C</span>
+                                <span class="unit">C</span>
                             </div>
                             <input id="flowmax" class="curveparam" type="range" min="30" max="90" step="1">
                         </div>
@@ -2835,7 +2836,7 @@
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
-                                <span class="unit">&deg;C</span>
+                                <span class="unit">C</span>
                             </div>
                             <input type="range" class="curveparam" min="25" max="90" step="1" />
                         </div>
@@ -2854,7 +2855,7 @@
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
-                                <span class="unit">&deg;C</span>
+                                <span class="unit">C</span>
                             </div>
                             <input id="flowmin" type="range" class="curveparam" min="10" max="40" step="1">
                         </div>
@@ -2876,7 +2877,7 @@
                     <div class="flexline">
                         <div class="valunit">
                             <span class="value"></span>
-                            <span class="unit">&deg;C</span>
+                            <span class="unit">C</span>
                         </div>
                         <input id="roomset" type="range" class="curveparam" min="17" max="23" step="0.1">
                     </div>
@@ -3093,7 +3094,7 @@
                         </div>
                     </div>
                     <div class="param range" field="heating.$.returnLimit.deltaT">
-                        <h5>Returnlimit &Delta;T</h5>
+                        <h5>Returnlimit delta T</h5>
                         <div class="infobox">
                             If the actual system temperature is above the return heatingcurve, a PI controller throttles the flow temperature.
                             <ul>
@@ -3121,15 +3122,15 @@
                 <div class="flexline hero-pin-source">
                     <div class="statusfield nohide">
                         <h5>Outside temperature</h5>
-                        <span class="statusvalue" field="outsideTemp" unit="°C"></span>
+                        <span class="statusvalue" field="outsideTemp" unit="C"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Room set point</h5>
-                        <span class="statusvalue" field="heatercircuit.$.roomsetpoint" unit="°C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.roomsetpoint" unit="C"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Room temperature</h5>
-                        <span class="statusvalue" field="heatercircuit.$.roomtemp" unit="&deg;C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.roomtemp" unit="C"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Suspended</h5>
@@ -3398,7 +3399,7 @@
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
-                                    <span class="unit">&deg;C</span>
+                                    <span class="unit">C</span>
                                 </div>
                                 <input type="range" min="0" max="20" step="1" />
                             </div>
@@ -3408,7 +3409,7 @@
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
-                                    <span class="unit">&deg;C</span>
+                                    <span class="unit">C</span>
                                 </div>
                                 <input type="range" min="30" max="70" step="1" />
                             </div>
@@ -4367,7 +4368,7 @@
         function formatTrendTemp(value) {
             if (value == null)
                 return "--";
-            return `${Math.round(value * 10) / 10} °C`;
+            return `${Math.round(value * 10) / 10} C`;
         }
 
         function sanitizeHistoryValue(value) {
@@ -4669,7 +4670,7 @@
                 label.setAttribute("y", (y + 3).toFixed(2));
                 label.setAttribute("fill", "rgba(220,190,165,0.74)");
                 label.setAttribute("font-size", "10");
-                label.textContent = `${(maxVal - minVal < 3) ? v.toFixed(1) : Math.round(v)}°`;
+                label.textContent = `${(maxVal - minVal < 3) ? v.toFixed(1) : Math.round(v)} C`;
                 svg.appendChild(label);
             }
 
@@ -5360,12 +5361,12 @@
                     clearValueColorClasses(roomSetEl);
                     const roomDisplay = (parsedRoomSet == null)
                         ? "--"
-                        : `${Math.round(parsedRoomSet * 10) / 10} °C`;
+                        : `${Math.round(parsedRoomSet * 10) / 10} C`;
                     roomSetEl.textContent = roomDisplay;
                     flashMetricValueOnChange(roomSetEl.closest(".metric-value") || roomSetEl, roomDisplay);
                     if (parsedRoomSet != null) {
                         const range = resolveValueRange(roomSetEl, "heatercircuit.$.roomsetpoint");
-                        applyValueColorClass(roomSetEl, parsedRoomSet, "°C", range.minRaw, range.maxRaw);
+                        applyValueColorClass(roomSetEl, parsedRoomSet, "C", range.minRaw, range.maxRaw);
                     }
                 }
 
@@ -5388,17 +5389,17 @@
                 const flowCtrlMode = normalizeRoomMode(getStatusValueByPath("heatercircuit.$.ctrlMode", ch));
                 const flowAction = getStatusValueByPath("heatercircuit.$.action", ch);
                 const flowSetField = "heatercircuit.$.flowsetpoint";
-                updateMetric(`heroFlowSet${ch === 0 ? "" : "2"}`, "", parseNumber(flowSet), "°C", `flowset${ch}`, flowSetField);
+                updateMetric(`heroFlowSet${ch === 0 ? "" : "2"}`, "", parseNumber(flowSet), "C", `flowset${ch}`, flowSetField);
                 updateFlowModeButtons(ch, flowCtrlMode, flowAction);
             }
-            updateMetric("heroDhwSet", "", dhwSetTemp, "°C", "dhwSet", "master.dhw_set_t.data");
+            updateMetric("heroDhwSet", "", dhwSetTemp, "C", "dhwSet", "master.dhw_set_t.data");
             updateDhwModeButtons(dhwMode, dhwAction);
             updateMetric("heroCoolingCtrl", "", coolingCtrl, "%", "coolingCtrl", "cooling.setpoint");
             updateCoolingModeButtons(coolingMode, coolingAction);
             updateMetric("heroVentSet", "", getVentSetpoint(), "%", "ventSet", "vent.setpoint");
             updateVentModeButtons(statuscache?.vent?.enable, statuscache?.slave?.vent_status?.vent_active);
-            updateMetric("heroFlow", "heroFlowTrendIcon", parseNumber(flow), "°C", `flow${currentCh}`, flowField);
-            updateMetric("heroOutside", "heroOutsideTrendIcon", parseNumber(outside), "°C", "outside", "outsideTemp");
+            updateMetric("heroFlow", "heroFlowTrendIcon", parseNumber(flow), "C", `flow${currentCh}`, flowField);
+            updateMetric("heroOutside", "heroOutsideTrendIcon", parseNumber(outside), "C", "outside", "outsideTemp");
             updateMetric("heroMod", "heroModTrendIcon", parseNumber(mod), "%", "mod", "slave.rel_mod");
             if (redrawTrend)
                 updateHeroTempTrendCard();
@@ -5427,18 +5428,13 @@
 
                 if (active === true) {
                     icon.classList.add("is-true");
-                    icon.textContent = "✔";
+                    icon.innerHTML = iconMarkup("check");
                     icon.title = "active";
                 }
                 else if (enabled === false) {
                     icon.classList.add("is-false");
                     icon.innerHTML = iconMarkup("cross");
                     icon.title = "disabled";
-                }
-                else if (active === true) {
-                    icon.classList.add("is-true");
-                    icon.innerHTML = iconMarkup("check");
-                    icon.title = "active";
                 }
                 else if (enabled === true) {
                     icon.classList.add("is-inactive");
@@ -5469,7 +5465,7 @@
                 diagEl.classList.remove("is-true", "is-false", "is-inactive", "is-error", "is-unknown");
                 if (diag === true || diag === false) {
                     diagEl.classList.add(diag ? "is-error" : "is-true");
-                    diagEl.textContent = diag ? "!" : "●";
+                    diagEl.innerHTML = iconMarkup(diag ? "error" : "dot");
                     diagEl.title = diag ? "diagnostic error" : "diagnostic ok";
                 }
                 else {
@@ -5490,20 +5486,12 @@
                 faultEl.classList.remove("is-true", "is-false", "is-inactive", "is-error", "is-unknown");
                 if (fault === true || fault === false) {
                     faultEl.classList.add(fault ? "is-error" : "is-true");
-                    faultEl.textContent = fault ? "!" : "●";
+                    faultEl.innerHTML = iconMarkup(fault ? "error" : "dot");
                     faultEl.title = fault ? "fault active" : "no fault";
                 }
                 else {
-                    const isError =
-                        diag === true ||
-                        diag === "true" ||
-                        diag === 1 ||
-                        diag === "1";
-                    diagEl.classList.add(isError ? "is-error" : "is-true");
-                    diagEl.innerHTML = iconMarkup(isError ? "error" : "dot");
-                    diagEl.title = isError ? "diagnostic error" : "diagnostic ok";
                     faultEl.classList.add("is-unknown");
-                    faultEl.textContent = "…";
+                    faultEl.innerHTML = iconMarkup("unknown");
                     faultEl.title = "unknown";
                 }
             }
@@ -5704,7 +5692,7 @@
             function clampAndSyncNeighbors(hcfg, idx, outside, flow) {
                 // Prevent crossing in outside axis to keep point ordering stable while dragging.
                 const axes = getCurveAxes();
-                const MIN_X_DIST = 2.0; // °C
+                const MIN_X_DIST = 2.0; // C
                 flow = clip(flow, axes.yaxis.max, axes.yaxis.min);
                 outside = clip(outside, axes.xaxis.min - idx * MIN_X_DIST, axes.xaxis.max + (hcfg.points.length - idx - 1) * MIN_X_DIST);
 
@@ -5922,7 +5910,7 @@
             ctx.beginPath();
             drawLine(xaxis.min, yaxis.min, xaxis.max, yaxis.min);
             ctx.stroke();
-            ctx.fillText("outside / °C", canvas.width - 55, origin.y - 10);
+            ctx.fillText("outside / C", canvas.width - 55, origin.y - 10);
 
             //draw y-axis
             ctx.beginPath();
@@ -5930,7 +5918,7 @@
             ctx.stroke();
             ctx.save();
             ctx.rotate(-Math.PI / 2);
-            ctx.fillText("flow / °C", -47, 30);
+            ctx.fillText("flow / C", -47, 30);
             ctx.restore();
 
             // Keep a local handle to heating config for mode-aware curve drawing.
@@ -6067,7 +6055,7 @@
                 ctx.beginPath();
                 let point = config.heating?.[currentCh]?.points?.[curveDrag.idx];
                 let p = getPoint(point.outside ?? 0, point.flow ?? 0);
-                let text = `${point.outside} °C / ${point.flow} °C`;
+                let text = `${point.outside} C / ${point.flow} C`;
                 ctx.fillStyle = "#FFF";
                 ctx.fillText(text, p.x, p.y - 13);
                 ctx.stroke();
@@ -6547,8 +6535,8 @@
                 card.classList.add(`action-${activeAction}`);
             }
             if (iconEl) {
-                const icons = { cooling: "💨", idle: "⏸", off: "⏹" };
-                iconEl.textContent = icons[activeAction] ?? "";
+                const icons = { cooling: "wind", idle: "pause", off: "stop" };
+                iconEl.innerHTML = iconMarkup(icons[activeAction] ?? "");
                 iconEl.title = activeAction;
             }
 
@@ -6577,7 +6565,7 @@
                 card.classList.add(`action-${activeAction}`);
             }
             if (iconEl) {
-                iconEl.innerHTML = iconMarkup(activeAction === "cool" ? "snowflake" : "stop");
+                iconEl.innerHTML = iconMarkup(activeAction === "cooling" ? "snowflake" : "stop");
                 iconEl.title = activeAction;
             }
 
@@ -7046,7 +7034,7 @@
                 label.setAttribute("y", (y + 3).toFixed(2));
                 label.setAttribute("fill", "rgba(220,190,165,0.72)");
                 label.setAttribute("font-size", "9");
-                label.textContent = `${setpoint.toFixed(program.decimals)}°`;
+                label.textContent = `${setpoint.toFixed(program.decimals)} C`;
                 svg.appendChild(label);
             }
 
@@ -7119,7 +7107,7 @@
                 markerLabel.setAttribute("text-anchor", "end");
                 markerLabel.setAttribute("fill", "rgba(171, 219, 255, 0.96)");
                 markerLabel.setAttribute("font-size", "8.5");
-                markerLabel.textContent = `${program.liveValueLabel} ${liveSetpointTemp.toFixed(program.decimals)}°C`;
+                markerLabel.textContent = `${program.liveValueLabel} ${liveSetpointTemp.toFixed(program.decimals)} C`;
                 svg.appendChild(markerLabel);
             }
 
@@ -7942,16 +7930,16 @@
                     _(`#markerbody`).append(
                         _$("tr", {className: "marker-entry-row"}, 
                             _$("td", {textContent: item.comment}),
-                            _$("td", {textContent: (item.rs || "-") + " °C"}),
-                            _$("td", {textContent: item.ot + " °C"}),
-                            _$("td", {textContent: item.ft + " °C"}),
+                            _$("td", {textContent: (item.rs || "-") + " C"}),
+                            _$("td", {textContent: item.ot + " C"}),
+                            _$("td", {textContent: item.ft + " C"}),
                             _$("td", {},
                                 _$("button", {
                                     className: "rmmarker", 
                                     innerHTML: iconMarkup("trash"),
                                     ariaLabel: "Delete marker",
                                     onclick: (ev) => {
-                                        config.heating[currentCh].marker.splice(ev.target.getAttribute("index"), 1);
+                                        config.heating[currentCh].marker.splice(ev.currentTarget.getAttribute("index"), 1);
                                         drawMarkerTable();
                                         drawCurve();
                                     }
@@ -8000,7 +7988,7 @@
                     row.append(
                         _$("td", {textContent: scheduleDaysLabel(entry.days)}),
                         _$("td", {textContent: entry.time}),
-                        _$("td", {textContent: `${entry.temp.toFixed(program.decimals)} °C`}),
+                        _$("td", {textContent: `${entry.temp.toFixed(program.decimals)} C`}),
                         _$("td", {},
                             (active && active.days === entry.days && active.time === entry.time && active.temp === entry.temp)
                                 ? _$("span", { className: "slot-active-indicator", textContent: "on", title: "Active schedule slot" })
@@ -8466,7 +8454,7 @@
 
                     let i = 1;
                     for (adr in statuscache["1wire"]) {
-                        _("#oneWireSensors div:nth-child(" + i + ") span").innerText = statuscache["1wire"][adr] + " °C";
+                        _("#oneWireSensors div:nth-child(" + i + ") span").innerText = statuscache["1wire"][adr] + " C";
                         i++;
                     }
                 }
@@ -8497,7 +8485,7 @@
                                 )
                             );
                         }
-                        __("span", __("#bleSensors div.flexline")[i])[0].innerText = statuscache["BLE"][adr]["temp"] + " °C";
+                        __("span", __("#bleSensors div.flexline")[i])[0].innerText = statuscache["BLE"][adr]["temp"] + " C";
                         __("span", __("#bleSensors div.flexline")[i])[1].innerText = statuscache["BLE"][adr]["rh"] + " %";
                         __("span", __("#bleSensors div.flexline")[i])[2].innerText = statuscache["BLE"][adr]["bat"] + " %";
                         __("span", __("#bleSensors div.flexline")[i])[3].innerText = statuscache["BLE"][adr]["rssi"] + " dBm";
