@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html>
 
@@ -2227,7 +2226,7 @@
                     </div>
                     <div class="statusfield">
                         <h5>MQTT basetopic</h5>
-                        <a href="/topics" target="_blank" class="statusvalue" field="mqtt.basetopic"></a>
+                        <a href="/topics" target="_blank" rel="noopener noreferrer" class="statusvalue" field="mqtt.basetopic"></a>
                     </div>
                     <div class="statusfield">
                         <h5>WiFi status</h5>
@@ -2258,8 +2257,10 @@
             <div id="owdiv">
                 <h3>OpenWeather</h3>
                 <div class="group">
-                    <h5>Status</h5>
-                    <span class="statusvalue" field="owResult"></span>
+                    <div class="statusfield">
+                        <h5>Status</h5>
+                        <span class="statusvalue" field="owResult"></span>
+                    </div>
                 </div>
             </div>
             <div class="group hero-pin-source">
@@ -2353,10 +2354,6 @@
                     <div class="statusfield">
                         <h5>Vent. exhaust fan fault</h5>
                         <span class="statusvalue error" field="slave.vent_fault_flags.exhaust_fan_fault"></span>
-                    </div>
-                    <div class="statusfield">
-                        <h5>Vent. frost protection</h5>
-                        <span class="statusvalue" field="slave.vent_fault_flags.frost_protection"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. frost protection</h5>
@@ -3957,7 +3954,10 @@
             </div>
             <button onclick="reboot()">reboot</button>
         </div>
-        <div class="footer"><a href="http://www.seegel-systeme.de" target="_blank">www.seegel-systeme.de</a></div>
+        <div class="event-row" id="recentEvents">
+            <span class="event-empty">No recent actions yet.</span>
+        </div>
+        <div class="footer"><a href="http://www.seegel-systeme.de" target="_blank" rel="noopener noreferrer">www.seegel-systeme.de</a></div>
     </div>
     <div id="dlgSlaveRequest" class="modal" hidden>
         <div class="modal-content">
@@ -4212,9 +4212,11 @@
                 setpoint: 3
             },
             outsideTemp: {
-                source: 1,
-                lat: 49.4771,
-                lon: 10.9887,
+                // Disabled by default: the operator sets their own
+                // coordinates and API key in the UI.
+                source: 0,
+                lat: 0,
+                lon: 0,
                 interval: 300
             },
             mqtt: {
@@ -5878,7 +5880,7 @@
 
         // Compute curve axes for current flow settings.
         function getCurveAxes() {
-            const flowmax = config.heating[currentCh].flowMax;
+            const flowmax = config.heating?.[currentCh]?.flowMax ?? 60;
             let canvas = _("#canvas");
             const fmg = Math.ceil(flowmax / 10) * 10 + 5; // flowmax for graph
             const origin = {
@@ -6092,8 +6094,12 @@
 
         function drawCurve() {
             let canvas = document.getElementById(`canvas`);
-            let flowmax = config.heating[currentCh].flowMax;
-            let flowmin = config.heating[currentCh].flowMin;
+            // Config from the device is stored verbatim, so heating[] may be
+            // shorter than currentCh (e.g. CH1 only). Fall back to the defaults
+            // instead of throwing and killing the whole render.
+            const hcfg = config.heating?.[currentCh] ?? {};
+            let flowmax = hcfg.flowMax ?? 60;
+            let flowmin = hcfg.flowMin ?? 10;
             let fmg = Math.ceil(flowmax / 10) * 10 + 5; // flowmax for graph
             let p;
 
@@ -6171,7 +6177,7 @@
             ctx.restore();
 
             // Keep a local handle to heating config for mode-aware curve drawing.
-            const hcfg = config.heating?.[currentCh] ?? {};
+            // (drawCurve() already has an hcfg in scope above; reuse it.)
             if (hcfg.curveMode == CURVE_MODE_MULTIPOINT)
                 hcfg.points = normalizeCurvePoints(hcfg.points);
             let roomset = roomsetpoint[currentCh];
@@ -6180,7 +6186,9 @@
                 const hcs = statuscache?.heatercircuit?.[currentCh] ?? {};
                 if (hcs?.roomtemp !== undefined) {
                     const e = roomset - hcs.roomtemp;
-                    roomcomp = (hcfg.roomComp?.p ?? 0) * e + hcs.roomcompInteg ?? 0;
+                    // (+ binds tighter than ??, so the fallback must be parenthesised,
+                    //  otherwise a missing roomcompInteg yields NaN)
+                    roomcomp = (hcfg.roomComp?.p ?? 0) * e + (hcs.roomcompInteg ?? 0);
                     // boost
                     if (e > 1.0)
                         roomcomp += (hcfg.roomComp?.boost ?? 0) * e;
@@ -6264,8 +6272,11 @@
                 ctx.stroke();
             }
 
-            if (hcfg.returnLimit.deltaT !== 0)
-                drawFlowCurve("#58F", -hcfg.returnLimit.deltaT, true); // draw return limit curve
+            // hcfg defaults to {} when the device config omits this circuit,
+            // so returnLimit may be undefined.
+            const retDelta = hcfg.returnLimit?.deltaT ?? 0;
+            if (retDelta !== 0)
+                drawFlowCurve("#58F", -retDelta, true); // draw return limit curve
 
             if (roomcomp != 0)
                 drawFlowCurve("#0F0", roomcomp);
@@ -6350,9 +6361,9 @@
                 ctx.setLineDash([]);
             }
 
-            if (hcfg.returnLimit.deltaT !== 0) {
+            if (retDelta !== 0) {
                 // draw return limit
-                let ftsensor = getFlowTemperature(statuscache.outsideTemp?.current, roomset, hcfg) - hcfg.returnLimit.deltaT;
+                let ftsensor = getFlowTemperature(statuscache.outsideTemp?.current, roomset, hcfg) - retDelta;
                 let psensor = getPoint(statuscache.outsideTemp?.current, ftsensor);
                 drawMarkerPoint(psensor, '#68F');
                 ctx.strokeStyle = "#68F";
@@ -6909,6 +6920,9 @@
         }
 
         function reboot() {
+            // Reboots the heating controller and interrupts active control.
+            if (!confirm("Reboot OTthing now? Heating control will be interrupted."))
+                return;
             fetch("/reboot")
                 .then((resp) => {
                     if (!resp.ok)
@@ -6923,11 +6937,28 @@
                 });
         };
 
+        // Ensure config.heating has an entry for the channel. The device stores
+        // the posted config verbatim, so heating[] can be shorter than the
+        // number of circuits the UI can select.
+        function ensureHeatingConfig(ch) {
+            if (!Array.isArray(config.heating))
+                config.heating = [];
+            while (config.heating.length <= ch) {
+                const tpl = defaultConfig.heating[config.heating.length]
+                    ?? defaultConfig.heating[0];
+                // structuredClone, not a reference: sharing the default object
+                // would make user edits rewrite the defaults.
+                config.heating.push(tpl ? structuredClone(tpl) : {});
+            }
+            return config.heating[ch];
+        }
+
         function addMarker() {
             if (statuscache.outsideTemp == null) {
                 showToast("No outside temperature available!", "warning");
                 return;
             }
+            ensureHeatingConfig(currentCh);
             let heatCfg = config.heating[currentCh];
             // Use selected curve mode to compute marker flow temperature.
             let ft = getFlowTemperature(
@@ -7850,6 +7881,7 @@
 
         // copy simplecurve to multipoint curve
         function copyCurve() {
+            ensureHeatingConfig(currentCh);
             let hcfg = config.heating[currentCh];
             hcfg.points = [];
 
@@ -8366,8 +8398,14 @@
 
                 var p = path.split('.')
                 for (var i=0, len = p.length; i<len; i++) {
-                    if (i<len-1)
+                    if (i < len - 1) {
+                        // Create missing intermediates. Without this, a field
+                        // whose parent was never rendered left cfgVal undefined
+                        // and the assignment below threw.
+                        if (typeof cfgVal[p[i]] !== "object" || cfgVal[p[i]] === null)
+                            cfgVal[p[i]] = {};
                         cfgVal = cfgVal[p[i]];
+                    }
                     else
                         cfgVal[p[i]] = val;
                 };
@@ -8380,7 +8418,9 @@
                     slider.value = val;
                 else
                     val = "?";
-                _("span.value", ele).innerHTML = val;
+                // textContent, not innerHTML: val can come from an imported
+                // config file, which is not schema validated.
+                _("span.value", ele).textContent = val;
             }
 
             let xhrConfig = new XMLHttpRequest();
@@ -8480,7 +8520,8 @@
                     }   
                 });
 
-                let hcfg = config.heating[currentCh] ?? {};
+// An absent circuit must be materialised before copyCurve() reads it.
+                let hcfg = ensureHeatingConfig(currentCh);
 
                 _("#curveMode").checked = (hcfg.curveMode ?? 0) === CURVE_MODE_MULTIPOINT;
                 _("#curveMode").dispatchEvent(new Event("change"));
@@ -8563,8 +8604,12 @@
                     roomsetpoint[currentCh] = parseFloat(ev.target.value);
                 });
 
+                // Clone: assigning the default array by reference makes every later
+                // setConfigVal("heating.0....") rewrite defaultConfig too.
                 if (config.heating === undefined)
-                    config.heating = defaultConfig.heating;
+                    config.heating = structuredClone(defaultConfig.heating);
+                else if (Array.isArray(config.heating))
+                    config.heating = config.heating.map(h => structuredClone(h));
 
                 _("#curveMode").onchange = (ev) => {
                     const cv = ev.target.checked ? CURVE_MODE_MULTIPOINT : CURVE_MODE_SIMPLE;
@@ -8713,7 +8758,11 @@
                 }
 
                 let rtstr = "";
-                let runtime = statuscache.runtime;
+                // Guard: a payload without a numeric runtime would otherwise
+                // render "NaN s".
+                let runtime = Number(statuscache.runtime);
+                if (!Number.isFinite(runtime))
+                    runtime = 0;
                 rtstr = (runtime % 60) + " s";
                 runtime = Math.floor(runtime / 60);
                 if (runtime > 0) {
@@ -8756,8 +8805,11 @@
                 updateHeroStateCard();
                 applyValueColoring();
 
+                // Optional chaining: a status payload without mqtt used to throw here,
+                // aborting the rest of consumeStatusCache() silently.
+                const basetopic = statuscache.mqtt?.basetopic ?? "";
                 __(".mqttbasetopic").forEach((ele) => {
-                    ele.innerHTML = statuscache.mqtt.basetopic;
+                    ele.textContent = basetopic;
                 });
 
                 if ("1wire" in statuscache) {
@@ -8980,7 +9032,8 @@
                     var perc = Math.round(ev.loaded / ev.total * 100);
                     if (perc < 100) {
                         progressBar.value = perc;
-                        progressBar.innerText = perc + ' %';
+                        // progressBar is a <progress> element: setting innerText
+                        // on it renders nothing (progressText shows the value).
                         progressText.innerHTML = `Transferring firmware... ${perc} %`;
                     }
                     else {
@@ -8991,6 +9044,14 @@
                 };
 
                 xhrDownload.onload = () => {
+                    // An expired session returns 401. Leave the controls
+                    // disabled so the user is not invited to retry forever;
+                    // the status poll will raise the login dialog.
+                    if (isUnauthorizedStatus(xhrDownload)) {
+                        progressBar.value = 0;
+                        progressText.innerHTML = "Session expired. Please log in, then retry the upload.";
+                        return;
+                    }
                     if (xhrDownload.status < 200 || xhrDownload.status >= 300) {
                         progressBar.value = 0;
                         progressText.innerHTML = "Error: HTTP " + xhrDownload.status;
@@ -9030,8 +9091,6 @@
                 };
 
                 xhrDownload.open('post', '/update');
-                xhrDownload.setRequestHeader('Access-Control-Allow-Headers', '*');
-                xhrDownload.setRequestHeader('Access-Control-Allow-Origin', '*');
                 xhrDownload.send(formdata);
             };
 
