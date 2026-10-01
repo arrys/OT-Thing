@@ -30,6 +30,7 @@ import webbrowser
 import shutil
 import winsound
 import serial
+from pathlib import Path
 
 # ANSI colour output
 if sys.platform == "win32":
@@ -105,12 +106,40 @@ def _find_platformio_executable(project_dir):
     return None
 
 
+def newest_source_mtime(project_dir):
+    """Newest mtime across the inputs that affect a release firmware image."""
+    roots = ["src", "include", "lib", "data"]
+    files = ["platformio.ini", "partitions.csv", "helper.py", "default.ini"]
+    newest = 0.0
+    for root in roots:
+        base = os.path.join(project_dir, root)
+        for dirpath, _dirnames, filenames in os.walk(base):
+            for name in filenames:
+                # helper.py writes include/html.h, which must not count as input.
+                if name == "html.h":
+                    continue
+                newest = max(newest, os.path.getmtime(os.path.join(dirpath, name)))
+    for name in files:
+        path = os.path.join(project_dir, name)
+        if os.path.exists(path):
+            newest = max(newest, os.path.getmtime(path))
+    return newest
+
+
 def ensure_release_build(project_dir):
-    """Build release firmware if required artifacts are missing."""
+    """Build release firmware if artifacts are missing or older than the sources."""
     artifacts = _release_artifact_paths(project_dir)
     missing = [path for path in artifacts.values() if not os.path.exists(path)]
     if not missing:
-        return True
+        # Existence alone is not enough: flashing an artifact built from an
+        # earlier commit would ship the wrong firmware.
+        newest_src = newest_source_mtime(project_dir)
+        oldest_artifact = min(os.path.getmtime(p) for p in artifacts.values())
+        if newest_src and oldest_artifact < newest_src:
+            _warn("Release build artifacts are older than the sources - rebuilding.")
+            missing = list(artifacts.values())
+        else:
+            return True
 
     _warn("Release build artifacts missing. Starting `platformio run --environment release`...")
     pio = _find_platformio_executable(project_dir)
@@ -138,6 +167,53 @@ TARGET_USB_VID = 0x303A
 TARGET_USB_PID = 0x1001
 STABLE_DEVICE_SECONDS = 4.0
 DEVICE_POLL_INTERVAL_SECONDS = 0.5
+
+# Fixed bootloader / partition table offsets (ESP32-C3 image format).
+BOOTLOADER_OFFSET = 0x0
+PARTITION_TABLE_OFFSET = 0x8000
+EXPECTED_CHIP = "ESP32-C3"
+
+
+def parse_partition_offsets(csv_path):
+    """Return (offset, size) of the ota_0 app partition from partitions.csv.
+
+    The firmware offset used to be hardcoded as 0x10000, which silently drifts
+    out of sync if the nvs/otadata sizes above app0 are ever changed. Sizes may
+    be given as plain bytes or with a K/M suffix.
+    """
+    for raw in Path(csv_path).read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        cols = [c.strip() for c in line.split(",")]
+        # Name, Type, SubType, Offset, Size, Flags
+        if len(cols) < 5 or cols[1] != "app":
+            continue
+        if cols[2] != "ota_0":
+            continue
+
+        def to_bytes(txt):
+            txt = txt.strip().upper()
+            mult = 1
+            if txt.endswith("K"):
+                mult, txt = 1024, txt[:-1]
+            elif txt.endswith("M"):
+                mult, txt = 1024 * 1024, txt[:-1]
+            return int(txt, 0) * mult
+
+        return to_bytes(cols[3]), to_bytes(cols[4])
+    raise ValueError(f"no ota_0 app partition found in {csv_path}")
+
+
+def verify_flash_result(result):
+    """True only if write_flash() reported a successful verify for every segment."""
+    if not isinstance(result, dict):
+        # No verifiable report: treat as failure rather than silently succeeding.
+        return False
+    verify = result.get("verify")
+    if isinstance(verify, dict):
+        return bool(verify) and all(v is True for v in verify.values())
+    return False
 
 # Device Network Configuration
 DEVICE_IP = "4.3.2.1"
@@ -209,7 +285,7 @@ CONFIG = {
             "roomsetpoint": {"source": 0, "temp": 21},
             "roomtemp": {"source": 1},
             "overrideFlow": False,
-            "overrideOn": False,
+"overrideOn": False,
             "roomComp": {"enabled": False, "p": 1.0, "i": 0.0, "boost": 1.0},
             "enableHyst": False,
             "hysteresis": 0.5,
@@ -235,7 +311,9 @@ CONFIG = {
         "freeVentEnable": False,
         "setpoint": 3,
     },
-    "outsideTemp": {"source": 1, "apikey": None, "lat": 49.4771, "lon": 10.9887, "interval": 300},
+    # Outside temp disabled (source 0) by default: enable it and set your own
+    # coordinates/apikey per unit rather than shipping a fixed location.
+    "outsideTemp": {"source": 0, "apikey": None, "lat": 0.0, "lon": 0.0, "interval": 300},
     "mqtt": {"host": "", "port": 1883, "user": "", "pass": "", "tls": False, "keepAlive": 15},
     "masterMemberId": 8,
     "timezone": 3600,
@@ -256,10 +334,14 @@ def get_target_port():
 
 def wait_for_stable_target_port(stable_seconds=STABLE_DEVICE_SECONDS):
     """
-    Wait for USB device to appear, then return immediately.
-    Returns the port name as soon as it is present.
+    Wait for the USB device to appear and stay continuously present.
+
+    A USB device commonly enumerates before its USB-CDC serial interface is
+    usable, so returning on first sight races the port opening. The port name is
+    returned only after it has been present for the whole settle window.
     """
     last_port = None
+    appeared_at = None
 
     _act(
         f"Waiting for USB device VID:PID {TARGET_USB_VID:04X}:{TARGET_USB_PID:04X}... (Ctrl+C to stop)"
@@ -272,11 +354,23 @@ def wait_for_stable_target_port(stable_seconds=STABLE_DEVICE_SECONDS):
             if last_port is not None:
                 _act("Device disappeared, waiting for it to re-appear...")
             last_port = None
+            appeared_at = None
             time.sleep(DEVICE_POLL_INTERVAL_SECONDS)
             continue
 
-        _act(f"Device {port} present. Starting upload.")
-        return port
+        now = time.time()
+        if port != last_port:
+            # A different port (or the same one re-enumerating) restarts the window.
+            last_port = port
+            appeared_at = now
+            time.sleep(DEVICE_POLL_INTERVAL_SECONDS)
+            continue
+
+        if appeared_at is not None and (now - appeared_at) >= stable_seconds:
+            _act(f"Device {port} stable for {stable_seconds:g}s. Starting upload.")
+            return port
+
+        time.sleep(DEVICE_POLL_INTERVAL_SECONDS)
 
 
 def upload_firmware(port, project_dir):
@@ -309,20 +403,45 @@ def upload_firmware(port, project_dir):
             print("\nRun: pio run -e release")
             return None
 
+    # Resolve the app offset from partitions.csv instead of hardcoding it.
+    partitions_csv = os.path.join(project_dir, "partitions.csv")
+    try:
+        app_offset, app_size = parse_partition_offsets(partitions_csv)
+    except (OSError, ValueError) as exc:
+        _err(f"✗ Cannot determine app offset: {exc}")
+        return None
+
+    fw_size = os.path.getsize(firmware_path)
+    if fw_size > app_size:
+        _err(
+            f"✗ firmware.bin is {fw_size} bytes but the ota_0 partition is only "
+            f"{app_size} bytes (offset 0x{app_offset:X})"
+        )
+        return None
+
     print(f"\n=== Uploading firmware to {port} ===")
 
     try:
         import esptool
 
-        esp = esptool.cmds.detect_chip(port=port)
-        esp = esp.run_stub()
+        esp = None
         try:
+            esp = esptool.cmds.detect_chip(port=port)
+            esp = esp.run_stub()
             chip_desc = esp.get_chip_description()
             mac = ":".join(f"{b:02x}" for b in esp.read_mac("BASE_MAC"))
             print(f"Chip : {chip_desc}")
             print(f"MAC  : {mac}")
 
-            # Erase only NVS and LittleFS partitions so old config/data can't survive reprogramming
+# VID:PID 303A:1001 matches every Espressif native-USB part, so a
+            # S2/S3 would happily accept a C3 bootloader at fixed offsets.
+            if EXPECTED_CHIP not in chip_desc:
+                raise RuntimeError(
+                    f"expected {EXPECTED_CHIP}, found '{chip_desc}' - refusing to flash"
+                )
+
+            # Erase only NVS and LittleFS partitions so old config/data can't survive
+            # reprogramming, while leaving the app and otadata partitions intact.
             partitions = _read_partition_table(project_dir)
             for part_name in ("nvs", "spiffs"):
                 if part_name in partitions:
@@ -333,17 +452,28 @@ def upload_firmware(port, project_dir):
                     _warn(f"⚠ Partition '{part_name}' not found in partitions.csv, skipping erase")
 
             print("Writing bootloader, partition table, and firmware...")
-            esptool.cmds.write_flash(
+            result = esptool.cmds.write_flash(
                 esp,
                 [
-                    (0x0,     bootloader_path),
-                    (0x8000,  partition_path),
-                    (0x10000, firmware_path),
+                    (BOOTLOADER_OFFSET, bootloader_path),
+                    (PARTITION_TABLE_OFFSET, partition_path),
+                    (app_offset, firmware_path),
                 ],
             )
+            # write_flash returns per-segment MD5 verify results. A failed or
+            # skipped verify means the flash content is unknown, so do not
+            # report success.
+            if not verify_flash_result(result):
+                raise RuntimeError(
+                    "flash verification failed: "
+                    + str(result.get("verify") if isinstance(result, dict) else result)
+                )
             _ok("✓ Firmware uploaded successfully")
         finally:
-            esp._port.close()
+            # _port is a private esptool attribute and may be absent.
+            close = getattr(getattr(esp, "_port", None), "close", None)
+            if close is not None:
+                close()
 
         return {"chip": chip_desc, "mac": mac}
     except Exception as e:
@@ -353,12 +483,21 @@ def upload_firmware(port, project_dir):
 
 
 def verify_tcp_stream(host, port, max_cycles=20, connect_timeout=30, read_timeout=10):
-    """Connect to a TCP/IP port and verify OT event lines cycling T→S→P→B."""
+    """Connect to a TCP/IP port and verify a well-formed OT event stream.
+
+    Only the per-line format is checked. The device emits interleaved frames
+    depending on mode and on what is attached to the slave port: in master mode
+    (what this tool configures) only T/B/A/E appear, and the room-unit frames
+    S/P/R only show up when a unit is actually polling the slave port. The
+    previous fixed T→S→P→B cycle could therefore never be satisfied on a
+    freshly flashed device.
+    """
     import re
 
-    line_pattern = re.compile(r"^[TSPBtspb][0-9A-Fa-f]{8}$")
-    sequence = ["T", "S", "P", "B"]
-    max_lines = max_cycles * len(sequence)
+    # T=master req to boiler, B/A=boiler response (as-is/rewritten), E=invalid
+    # frame, S=room unit request, P=response to room unit, R=repeater rewrite.
+    line_pattern = re.compile(r"^[TSPBAREtspbare][0-9A-Fa-f]{8}$")
+    min_lines = max_cycles
     print(f"\n=== Verifying TCP/IP stream on {host}:{port} ({max_cycles} cycles) ===")
 
     deadline = time.time() + connect_timeout
@@ -380,9 +519,6 @@ def verify_tcp_stream(host, port, max_cycles=20, connect_timeout=30, read_timeou
         try:
             with sock.makefile("r", encoding="utf-8", newline="\n") as stream:
                 lines_read = 0
-                seq_idx = None
-                last_t_hex = None  # hex from last T message, expect S to match
-                last_p_hex = None  # hex from last P message, expect B to match
                 for _ in range(max_lines):
                     line = stream.readline()
                     if not line:
@@ -393,41 +529,11 @@ def verify_tcp_stream(host, port, max_cycles=20, connect_timeout=30, read_timeou
                     lines_read += 1
                     print(f"TCP[{lines_read}]: {line}")
                     if not line_pattern.match(line):
-                        _err(f"✗ Invalid line format: '{line}'. Expected T/S/P/B + 8 hex digits.")
+                        _err(f"✗ Invalid line format: '{line}'. Expected a source letter + 8 hex digits.")
                         return False
-                    prefix = line[0].upper()
-                    hex_val = line[1:]
-                    if seq_idx is None:
-                        # Accept any starting position in the cycle
-                        seq_idx = sequence.index(prefix) if prefix in sequence else None
-                        if seq_idx is None:
-                            _err(f"✗ Unexpected prefix '{prefix}', expected one of {sequence}.")
-                            return False
-                    else:
-                        expected_idx = (seq_idx + 1) % len(sequence)
-                        if prefix != sequence[expected_idx]:
-                            _err(f"✗ Expected '{sequence[expected_idx]}' in T→S→P→B sequence, got '{prefix}'.")
-                            return False
-                        seq_idx = expected_idx
 
-                    # Cross-message hex matching
-                    if prefix == "T":
-                        last_t_hex = hex_val
-                    elif prefix == "S":
-                        if last_t_hex is not None and hex_val != last_t_hex:
-                            _err(f"✗ S hex '{hex_val}' does not match preceding T hex '{last_t_hex}'.")
-                            return False
-                        last_t_hex = None
-                    elif prefix == "P":
-                        last_p_hex = hex_val
-                    elif prefix == "B":
-                        if last_p_hex is not None and hex_val != last_p_hex:
-                            _err(f"✗ B hex '{hex_val}' does not match preceding P hex '{last_p_hex}'.")
-                            return False
-                        last_p_hex = None
-
-                if lines_read < max_lines:
-                    _err(f"✗ Only received {lines_read}/{max_lines} lines ({lines_read // len(sequence)}/{max_cycles} complete cycles).")
+                if lines_read < min_lines:
+                    _err(f"✗ Only received {lines_read}/{min_lines} lines.")
                     return False
 
         except OSError as exc:
@@ -545,7 +651,7 @@ def _query_netsh_wlan_status():
     Services are disabled, so this must not be used to enumerate interfaces.
     """
     result = subprocess.run(
-        ["cmd", "/c", "netsh wlan show interfaces"],
+        ["netsh", "wlan", "show", "interfaces"],
         capture_output=True, text=True, encoding="cp850", errors="replace"
     )
     return _parse_wifi_interfaces(result.stdout)
@@ -583,10 +689,10 @@ def prompt_wifi_interface():
 def disconnect_wifi(profile="OTthing", interface=None):
     target = f" on interface {interface}" if interface else ""
     print(f"Disconnecting from WiFi (profile: {profile}){target}...")
-    cmd = f'netsh wlan disconnect'
+    argv = ["netsh", "wlan", "disconnect"]
     if interface:
-        cmd += f' interface="{interface}"'
-    result = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True)
+        argv += ["interface", interface]
+    result = subprocess.run(argv, capture_output=True, text=True)
     if result.stdout.strip():
         print(result.stdout.strip())
     if result.returncode != 0:
@@ -595,13 +701,20 @@ def disconnect_wifi(profile="OTthing", interface=None):
     return True
 
 def connect_to_otthing_wifi(profile="OTthing", timeout=20, retries=3, interface=None):
+    if sys.platform != "win32":
+        _warn("WiFi connect needs netsh, which is Windows-only. Skipping.")
+        return False
+
     def _netsh_connect():
         target = f" on interface {interface}" if interface else ""
         print(f"Connecting to OTthing WiFi (profile: {profile}){target}...")
-        cmd = f'netsh wlan connect name="{profile}"'
+        # Argument vector, not a cmd.exe string: profile and interface are
+        # operator-supplied and would otherwise be parsed for &, | and %
+        # metacharacters.
+        argv = ["netsh", "wlan", "connect", "name", profile]
         if interface:
-            cmd += f' interface="{interface}"'
-        result = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True)
+            argv += ["interface", interface]
+        result = subprocess.run(argv, capture_output=True, text=True)
         if result.stdout.strip():
             print(result.stdout.strip())
         if result.returncode != 0:
@@ -616,18 +729,18 @@ def connect_to_otthing_wifi(profile="OTthing", timeout=20, retries=3, interface=
         wait = 8 if attempt == 1 else 5
         disconnected_early = False
         for remaining in range(wait, 0, -1):
-            # Query current WiFi SSID every second during the wait, scoped to the selected interface
+# Query current WiFi SSID every second during the wait, scoped to the selected interface
             all_interfaces = _query_netsh_wlan_status()
             if interface:
                 selected = next((i for i in all_interfaces if i.get("Name") == interface), None)
                 check_lines = [f"{k}                   : {v}" for k, v in selected.items()] if selected else []
             else:
                 check_lines = subprocess.run(
-                    ["cmd", "/c", "netsh wlan show interfaces"],
+                    ["netsh", "wlan", "show", "interfaces"],
                     capture_output=True, text=True, encoding="cp850", errors="replace"
                 ).stdout.splitlines()
             ssid_line = next((l.strip() for l in check_lines if "SSID" in l and "BSSID" not in l), "SSID: ?")
-            state_line = next((l.strip() for l in check_lines if "Status" in l or "tatus" in l or "Status" in l), "State: ?")
+            state_line = next((l.strip() for l in check_lines if "Status" in l), "State: ?")
             print(f"  [{remaining:2d}s] {state_line} | {ssid_line}")
             output_lower = "\n".join(check_lines).lower()
             # Break early if already associated
@@ -676,11 +789,15 @@ def configure_device():
     Returns:
         bool: True on success, False on failure.
     """
-    import requests
-    
     print(f"\n=== Configuring device ===")
     
     # Send configuration
+    try:
+        import requests
+    except ImportError:
+        _err("✗ 'requests' is not installed. Run: pip install requests")
+        return False
+
     try:
         config_endpoint = f"http://{DEVICE_IP}/config"
         print(f"Sending config to {config_endpoint}...")
