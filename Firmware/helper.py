@@ -35,7 +35,7 @@ def copy_html():
                 keep_comments=False,          # keep regular HTML comments
                 keep_ssi_comments=False,      # keep SSI comments <!--# ... -->
                 remove_bangs=False,           # remove <!...> declarations (e.g. <!DOCTYPE>)
-                remove_processing_instructions=False,  # remove <?...?> processing instructions
+                remove_processing_instructions=True,   # strip <?...?> prologs (invalid in HTML)
                 # --- Entities ---
                 allow_optimal_entities=False, # use shortest entity representation (may change semantics in edge cases)
                 # --- Template syntax preservation ---
@@ -43,11 +43,20 @@ def copy_html():
                 preserve_chevron_percent_template_syntax=False, # preserve <% %> (EJS, ERB, JSP, etc.)
             )
         elif env["PIOENV"] in ("release", "production"):
-            print("\033[91mminify_html not installed, skipping HTML minification\033[0m")
-            print(f"\033[91mPlatformIO Python: {sys.executable}\033[0m")
-            print("\033[91mInstall with: <that-python> -m pip install minify-html\033[0m")
+            # helper.py runs inside PlatformIO's own interpreter, not the
+            # project venv, so `pip install -r requirements.txt` does not
+            # provide minify-html here. Shipping an unminified image silently
+            # wastes flash on every unit, so fail loudly instead.
+            print(f"\033[91mminify_html not installed in {sys.executable}\033[0m")
+            print("\033[91mRelease builds require minify-html. Install with:\033[0m")
+            print(f"\033[91m  {sys.executable} -m pip install minify-html\033[0m")
+            raise RuntimeError("minify-html is required for release/production builds")
 
-        compressed = gzip.compress(content.encode("utf-8"), compresslevel=9)
+        # mtime=0 keeps the output byte-identical for identical input. Without it
+        # gzip embeds the current time, so every build regenerates a different
+        # html.h, forcing a recompile of portal.cpp and making release binaries
+        # non-reproducible.
+        compressed = gzip.compress(content.encode("utf-8"), compresslevel=9, mtime=0)
         print(f"embed html: {len(content.encode('utf-8'))} bytes raw, {len(compressed)} bytes gzip")
 
         with open(os.path.join(env["PROJECT_DIR"], "include/html.h"), "w", encoding="utf-8") as fout:
