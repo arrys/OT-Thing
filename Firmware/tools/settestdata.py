@@ -198,11 +198,17 @@ def encode_ot_value(key: str, value: Any) -> int:
   if kind == "u8":
     return to_uint16(int(value) & 0xFF)
   if kind == "f8.8":
-    # Accept raw OT uint16 payloads from the web UI; only encode when a float is provided.
+    # Accept raw OT uint16 payloads from the web UI; only encode when a float is
+    # provided. bool is a subclass of int, so exclude it explicitly.
+    if isinstance(value, bool):
+      raise ValueError(f"{key}: expected a number, got bool")
     if isinstance(value, int):
       return to_uint16(value)
+    if isinstance(value, str):
+      # The firmware's decodeValue accepts a hex string as well (portal.cpp).
+      return to_uint16(int(value, 16))
     return to_uint16(encode_ot_float(float(value)))
-  if kind in ("u16", "s16"):
+  if kind in ("u16", "s16", "u8pair"):
     return to_uint16(int(value))
   raise ValueError(f"unsupported testdata key: {key}")
 
