@@ -101,7 +101,7 @@ OTthing exposes the following REST endpoints and WebSocket connection:
 ### Control Endpoints
 
 * **`GET /set?key=value`** - Update settings via query parameters
-  - Examples: `/set?chSetTemp1=50`, `/set?chMode1=heat`, `/set?flowSetTemp=45`
+  - Examples: `/set?chSetTemp1=50`, `/set?chMode1=heat`, `/set?maxModulation=100`
   - Returns 200 on success, 503 if value cannot be set
 
 * **`GET /slaverequest?id=X&rw=Y&data=HEX`** - Send raw OpenTherm slave request
@@ -109,6 +109,14 @@ OTthing exposes the following REST endpoints and WebSocket connection:
   - `rw`: 1 for READ_DATA, 0 for WRITE_DATA
   - `data`: Hex-encoded data value
   - Returns JSON with response type, id, and data
+  - Returns 503 if a parameter is missing or the OT transaction does not complete
+
+* **`GET /topics`** is documented above as a text/plain list of control topics
+
+* **`GET /testdata`** / **`POST /testdata`** - Loopback test data for the local OT slave
+  - GET returns the current table as JSON (used by `tools/settestdata.py`)
+  - POST accepts a JSON object of `{"<name>": <0..65535>}` and updates the table
+  - Only meaningful in loopback test mode (`otMode: 4`)
 
 ### System Endpoints
 
@@ -117,8 +125,9 @@ OTthing exposes the following REST endpoints and WebSocket connection:
   - Status field: -2 (scanning in progress), -1 (failed), 0+ (number of networks found)
 
 * **`POST /setwifi`** - Configure WiFi credentials
-  - Parameters: `ssid` and `pass` (URL-encoded)
-  - Triggers device reboot and WiFi connection attempt
+  - Parameters: `ssid` and `pass` (URL-encoded), both required
+  - Starts a WiFi connection attempt; does not reboot. The device comes back
+    on the new network within a few seconds
 
 * **`GET /reboot`** - Trigger device reboot
   - Returns 200 and schedules reboot
@@ -132,6 +141,19 @@ OTthing exposes the following REST endpoints and WebSocket connection:
 * **`WebSocket /ws`** - Real-time updates and log streaming
   - Receives log messages and status updates
   - Can be used to monitor device behavior in real-time
+
+### Authentication
+
+All endpoints are open on the local network by default. Set a Web UI password in
+the web interface (or via `POST /auth/setup`) to require a login. Once a password
+is configured, the endpoints above require a session cookie.
+
+* **`GET /auth/state`** - Reports whether a password is configured and whether the current session is valid
+* **`POST /auth/login`** - `password` field; returns a session cookie
+* **`POST /auth/logout`** - Ends the current session
+* **`POST /auth/setup`** - `password` (and `delete=1`) to set or remove the password
+
+Note that `/ws` is not covered by the session check.
 
 ## Testing & Development
 
