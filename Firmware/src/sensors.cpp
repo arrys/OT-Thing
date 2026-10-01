@@ -155,11 +155,11 @@ OutsideTemp::OutsideTemp():
     });
 
     acli.onDisconnect([](void *arg, AsyncClient *client) {
-        client->close(true);
+        client->close();
     });
 
     acli.onError([](void *arg, AsyncClient *client, int8_t error) {
-        client->close(true);
+        client->close();
     });
 }
 
@@ -203,7 +203,7 @@ void OutsideTemp::loop() {
         else {
             if (millis() > nextMillis) {
                 nextMillis = millis() + interval;
-                acli.close(true);
+                acli.close();
                 httpState = HTTP_IDLE;
             }
         }
