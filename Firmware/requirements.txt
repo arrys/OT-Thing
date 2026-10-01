@@ -1,6 +1,12 @@
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
-esptool
-minify-html
 websockets
+# production.py uses the esptool 4.x/5.x Python API shape
+# (esptool.cmds.detect_chip / write_flash with (offset, path) tuples).
+esptool>=5,<6
+pyserial>=3.5
+requests>=2.31.0
+# helper.py runs inside PlatformIO's own interpreter (penv), not this venv.
+# Install it there too, or release builds silently skip HTML minification.
+minify-html
