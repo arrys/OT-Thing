@@ -4,3 +4,11 @@ include/html.h
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# python tooling
+__pycache__/
+*.pyc
+# written by tools/production.py, contains real device MAC addresses
+devicelist.txt
+# operator-local credentials, may hold real secrets
+secrets.ini
