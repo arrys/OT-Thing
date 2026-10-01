@@ -31,7 +31,6 @@ static struct {
     {Mqtt::TOPIC_OVERRIDECHFLOW2, "overrideChFlow2"},
     {Mqtt::TOPIC_OVERRIDECHON1, "overrideChOn1"},
     {Mqtt::TOPIC_OVERRIDECHON2, "overrideChOn2"},
-    {Mqtt::TOPIC_OVERRIDEDHW, "overrideDhw"},
     {Mqtt::TOPIC_VENTSETPOINT, "ventSetpoint"},
     {Mqtt::TOPIC_VENTENABLE, "ventEnable"},
     {Mqtt::TOPIC_OPENBYPASS, "openBypass"},
@@ -43,6 +42,10 @@ static struct {
     {Mqtt::TOPIC_DHWBLOCKING, "dhwBlocking"},
     {Mqtt::TOPIC_COOLINGMODE, "coolingMode"},
     {Mqtt::TOPIC_COOLINGCTRL, "coolingCtrl"},
+    {Mqtt::TOPIC_TURBOSHIFT1, "turboShift1"},
+    {Mqtt::TOPIC_TURBOSHIFT2, "turboShift2"},
+    {Mqtt::TOPIC_TURBODURATION1, "turboDuration1"},
+    {Mqtt::TOPIC_TURBODURATION2, "turboDuration2"},
 };
 
 Mqtt mqtt;
@@ -160,6 +163,7 @@ void Mqtt::loop() {
     if (cli.connected()) {
         if (!discFlag) {
             discFlag = true;
+            cli.publish(statusTopic.c_str(), 0, true, PSTR("online"));
             discFlag &= otcontrol.sendDiscovery();
             discFlag &= OneWireNode::sendDiscoveryAll();
             discFlag &= BLESensor::sendDiscoveryAll();
@@ -170,11 +174,11 @@ void Mqtt::loop() {
         if ((millis() - lastStatus) > 5000) {
             lastStatus = millis();
             JsonDocument doc;
-            devstatus.buildDoc(doc);
+            JsonObject jobj = doc.to<JsonObject>();
+            devstatus.buildDoc(jobj);
             String statStr;
-            serializeJson(doc, statStr);
+            serializeJson(jobj, statStr);
             cli.publish(haDisc.defaultStateTopic.c_str(), 0, false, statStr.c_str());
-            cli.publish(statusTopic.c_str(), 0, false, PSTR("online"));
         }
     }
 }
@@ -197,7 +201,7 @@ bool Mqtt::publish(String topic, JsonDocument &payload, const bool retain) {
 void Mqtt::onMessage(const char *topic, String &payload) {
     String topicStr = topic;
     topicStr.remove(0, baseTopic.length() + 1);
-    topicStr.remove(topicStr.length() - 4, 4);
+    topicStr.remove(topicStr.length() - 4, 4); // remove "/set" from end of topic
 
     String log = F("MQTT: ");
     log += topic;
@@ -211,13 +215,16 @@ void Mqtt::onMessage(const char *topic, String &payload) {
     }
 }
 
-bool Mqtt::setValue(const String &key, const String &value, const bool send) {
+bool Mqtt::setValue(const String &key, const String &value, const bool viaHttp) {
     enum MqttTopic etop = TOPIC_UNKNOWN;
     for (int i=0; i<sizeof(topicList) / sizeof(topicList[0]); i++)
         if (key.compareTo(FPSTR(topicList[i].str)) == 0) {
             etop = topicList[i].topic;
             break;
         }
+
+    const Sensor::Source lastSrc = viaHttp ? Sensor::SOURCE_HTTP : Sensor::SOURCE_MQTT;
+    bool retain = true;
 
     switch (etop) {
     case TOPIC_UNKNOWN: {
@@ -229,13 +236,13 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
 
     case TOPIC_OUTSIDETEMP: {
         double d = value.toFloat();
-        outsideTemp.set(d, Sensor::SOURCE_MQTT);
+        outsideTemp.set(d, Sensor::SOURCE_MQTT, lastSrc);
         break;
     }
 
     case TOPIC_DHWSETTEMP: {
         double d = value.toFloat();
-        otcontrol.setDhwTemp(d);
+        otcontrol.dhwControl.setSetpoint(d, lastSrc);
         break;
     }   
 
@@ -249,7 +256,7 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
     case TOPIC_CHSETTEMP1:
     case TOPIC_CHSETTEMP2: {
         double d = value.toFloat();
-        otcontrol.setChTemp(d, (uint8_t) (etop - TOPIC_CHSETTEMP1));
+        otcontrol.setChTemp(d, (uint8_t) (etop - TOPIC_CHSETTEMP1), lastSrc);
         break;
     }
 
@@ -273,7 +280,7 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
     case TOPIC_ROOMTEMP2: {
         const uint8_t ch = (uint8_t) (etop - TOPIC_ROOMTEMP1);
         double d = value.toFloat();
-        roomTemp[ch].set(d, Sensor::SOURCE_MQTT);
+        roomTemp[ch].set(d, Sensor::SOURCE_MQTT, lastSrc);
         otcontrol.forceFlowCalc(ch);
         break;
     }
@@ -282,7 +289,7 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
     case TOPIC_ROOMSETPOINT2: {
         const uint8_t ch = (uint8_t) (etop - TOPIC_ROOMSETPOINT1);
         double d = value.toFloat();
-        roomSetPoint[ch].set(d, Sensor::SOURCE_MQTT);
+        roomSetPoint[ch].set(d, Sensor::SOURCE_MQTT, lastSrc);
         otcontrol.forceFlowCalc(ch);
         break;
     }
@@ -305,27 +312,26 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
         otcontrol.setOverrideChFlow(strToBool(value), (uint8_t) (etop - TOPIC_OVERRIDECHFLOW1));
         break;
 
-    case TOPIC_OVERRIDEDHW:
-        otcontrol.setOverrideDhw(strToBool(value));
-        break;
-
     case TOPIC_VENTSETPOINT: {
         uint8_t val = value.toInt();
-        otcontrol.setVentSetpoint(val);
+        otcontrol.ventCtrl.setVentSetpoint(val);
         break;
     }
 
     case TOPIC_VENTENABLE:
-        otcontrol.setVentEnable(strToBool(value));
+        otcontrol.ventCtrl.setVentEnable(strToBool(value));
         break;
 
     case TOPIC_OPENBYPASS:
+        otcontrol.ventCtrl.setOpenBypass(strToBool(value));
         break;
 
     case TOPIC_AUTOBYPASS:
+        otcontrol.ventCtrl.setAutoBypass(strToBool(value));
         break;
 
     case TOPIC_FREEVENTENABLE:
+        otcontrol.ventCtrl.setFreeVentEnable(strToBool(value));
         break;
 
     case TOPIC_MAXMODULATION: {
@@ -347,25 +353,49 @@ bool Mqtt::setValue(const String &key, const String &value, const bool send) {
         break;
 
     case TOPIC_COOLINGMODE:
-        otcontrol.setCoolingMode(haDisc.strToClimateMode(value));
+        otcontrol.setCoolingMode(strToBool(value));
         break;
 
     case TOPIC_COOLINGCTRL:
         otcontrol.setCoolingCtrl(value.toInt());
         break;
 
+    case TOPIC_TURBOSHIFT1:
+    case TOPIC_TURBOSHIFT2: {
+        const uint8_t ch = (uint8_t) (etop - TOPIC_TURBOSHIFT1);
+        double d = value.toFloat();
+        otcontrol.setTurboShift(d, ch);
+        retain = false;
+        break;
+    }
+
+    case TOPIC_TURBODURATION1:
+    case TOPIC_TURBODURATION2: {
+        const uint8_t ch = (uint8_t) (etop - TOPIC_TURBODURATION1);
+        uint32_t d = value.toInt();
+        otcontrol.setTurboDuration(d, ch);
+        retain = false;
+        break;
+    }
+
     default:
         return false;
     }
 
-    if (send && connected()) {
-        String topic = baseTopic + '/';
-        topic += key;
-        topic += F("/set");
-        cli.publish(topic.c_str(), 0, true, value.c_str());
-    }
+    if (viaHttp)
+        sendValue(etop, value, retain);
 
     return true;
+}
+
+void Mqtt::sendValue(const MqttTopic topic, const String &value, const bool retain) {
+    if (!connected())
+        return;
+
+    String topicStr = baseTopic + '/';
+    topicStr += getTopicString(topic);
+    topicStr += "/set";
+    cli.publish(topicStr.c_str(), 0, retain, value.c_str());
 }
 
 String Mqtt::getTopicString(const MqttTopic topic) {
@@ -377,6 +407,7 @@ String Mqtt::getTopicString(const MqttTopic topic) {
 
 String Mqtt::getValuePath(const ValueTemplateType vt, PGM_P field, const uint8_t ch, const uint8_t ommit) {
     String result = F("{% set tmp=(((value_json");
+    String ftmp = FPSTR(field);
 
     switch (vt) {
     case VALTMPL_ROOT:
@@ -387,9 +418,27 @@ String Mqtt::getValuePath(const ValueTemplateType vt, PGM_P field, const uint8_t
         result += F(".get('slave') or {})");
         break;
 
-    case VALTMPL_MASTER:
+    case VALTMPL_MASTER: {
         result += F(".get('master') or {})");
+
+        const int pidx = ftmp.indexOf('.');
+        if (pidx > -1)
+            ftmp = ftmp.substring(0, pidx) + F(".data") + ftmp.substring(pidx);
+        else
+            ftmp += F(".data");
         break;
+    }
+
+    case VALTMPL_ROOMUNIT: {
+        result += F(".get('roomunit') or {})");
+
+        const int pidx = ftmp.indexOf('.');
+        if (pidx > -1)
+            ftmp = ftmp.substring(0, pidx) + F(".data") + ftmp.substring(pidx);
+        else
+            ftmp += F(".data");
+        break;
+    }
 
     case VALTMPL_HEATING_CIRCUIT:
         result += F(".get('heatercircuit') or [])[#]");
@@ -402,18 +451,17 @@ String Mqtt::getValuePath(const ValueTemplateType vt, PGM_P field, const uint8_t
     case VALTMPL_FLAMESTATS:
         result += F(".get('slave') or {}).get('flameStats') or {}");
         break;
+
+    case VALTMPL_COOLING:
+        result += F(".get('cooling') or {})");
+        break;
+
+    case VALTMPL_VENT:
+        result += F(".get('vent') or {})");
+        break;
     }
 
     int numbrak = 2;
-
-    String ftmp = FPSTR(field);
-    if (vt == VALTMPL_MASTER) {
-        const int pidx = ftmp.indexOf('.');
-        if (pidx > -1)
-            ftmp = ftmp.substring(0, pidx) + F(".data") + ftmp.substring(pidx);
-        else
-            ftmp += F(".data");
-    }
 
     while (true) {
         auto pidx = ftmp.indexOf('.');

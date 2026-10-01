@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "esptool>=5,<6",
+#     "pyserial>=3.5",
+#     "requests>=2.31",
+#     "platformio>=6.1,<7",
+# ]
+# ///
+
 """
 Production batch firmware upload script for OTthing devices.
+
+Run with `uv run Firmware/tools/production.py` from the repository root.
 
 Handles:
 - Stable USB device detection (VID/PID)
@@ -16,6 +28,8 @@ import subprocess
 import time
 import webbrowser
 import shutil
+import winsound
+import serial
 
 # ANSI colour output
 if sys.platform == "win32":
@@ -23,11 +37,13 @@ if sys.platform == "win32":
 _RED    = "\033[91m"
 _GREEN  = "\033[92m"
 _YELLOW = "\033[93m"
+_CYAN   = "\033[96m"
 _RESET  = "\033[0m"
 
 def _ok(msg):   print(f"{_GREEN}{msg}{_RESET}")
 def _err(msg):  print(f"{_RED}{msg}{_RESET}")
 def _warn(msg): print(f"{_YELLOW}{msg}{_RESET}")
+def _act(msg):  print(f"{_CYAN}{msg}{_RESET}")
 
 
 def _release_artifact_paths(project_dir):
@@ -38,6 +54,35 @@ def _release_artifact_paths(project_dir):
         "partitions": os.path.join(build_dir, "partitions.bin"),
         "firmware": os.path.join(build_dir, "firmware.bin"),
     }
+
+
+def _parse_partition_size(value):
+    """Parse a partitions.csv offset/size field (hex, or K/M suffixed) into bytes."""
+    value = value.strip()
+    if value.lower().startswith("0x"):
+        return int(value, 16)
+    if value[-1:].upper() == "K":
+        return int(value[:-1]) * 1024
+    if value[-1:].upper() == "M":
+        return int(value[:-1]) * 1024 * 1024
+    return int(value)
+
+
+def _read_partition_table(project_dir):
+    """Parse partitions.csv into {name: (offset, size)} in bytes."""
+    csv_path = os.path.join(project_dir, "partitions.csv")
+    partitions = {}
+    with open(csv_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            fields = [p.strip() for p in line.split(",")]
+            if len(fields) < 5:
+                continue
+            name, _ptype, _subtype, offset_str, size_str = fields[:5]
+            partitions[name] = (_parse_partition_size(offset_str), _parse_partition_size(size_str))
+    return partitions
 
 
 def _find_platformio_executable(project_dir):
@@ -103,15 +148,21 @@ CONFIG = {
     "slaveApp": 0,  # heat/cool
     "otMode": 1,  # master
     "enableSlave": False,
+    "otDelay": 100,
+    "noDhwSet": False,
     "boiler": {
         "dhwOn": True,
         "dhwTemperature": 50,
+        "dhwSchedule": {"enabled": False, "entries": []},
+        "dhwCtrlSource": 2,
         "overrideDhw": False,
         "coolOn": False,
         "maxModulation": 100,
         "otc": False,
         "summerMode": False,
         "dhwBlocking": False,
+        "chOffTemp": 10,
+        "texhaustAsFloat": False,
     },
     "heating": [
         {
@@ -123,15 +174,23 @@ CONFIG = {
             "gradient": 1.0,
             "offset": 0,
             "marker": [],
+            "schedule": {"enabled": False, "entries": []},
             "roomsetpoint": {"source": 0, "temp": 21},
             "roomtemp": {"source": 1},
             "overrideFlow": False,
+            "overrideOn": False,
             "roomComp": {"enabled": False, "p": 1.0, "i": 0.5, "boost": 1.0},
             "enableHyst": False,
             "hysteresis": 0.5,
             "curveMode": 0,
             "minSuspend": False,
+            "minSuspHyst": 0.2,
             "suspOffset": 0.0,
+            "outsideSuspend": {
+                "type": 1,
+                "hysteresis": 0.2,
+                "offset": 0.0
+            },
             "returnLimit": {
                 "source": 1,
                 "deltaT": 0.0
@@ -146,15 +205,23 @@ CONFIG = {
             "gradient": 1.0,
             "offset": 0,
             "marker": [],
+            "schedule": {"enabled": False, "entries": []},
             "roomsetpoint": {"source": 0, "temp": 21},
             "roomtemp": {"source": 1},
             "overrideFlow": False,
-            "roomComp": {"enabled": False, "p": 1.0, "i": 0.5, "boost": 1.0},
-            "enablyHyst": False,
+            "overrideOn": False,
+            "roomComp": {"enabled": False, "p": 1.0, "i": 0.0, "boost": 1.0},
+            "enableHyst": False,
             "hysteresis": 0.5,
             "curveMode": 0,
             "minSuspend": False,
+            "minSuspHyst": 0.2,
             "suspOffset": 0.0,
+            "outsideSuspend": {
+                "type": 1,
+                "hysteresis": 0.2,
+                "offset": 0.0
+            },
             "returnLimit": {
                 "source": 1,
                 "deltaT": 0.0
@@ -174,7 +241,7 @@ CONFIG = {
     "timezone": 3600,
     "hostname": "otthing",
     "haPrefix": "homeassistant",
-    "aux": [{"mode": 4}, {"mode": 0}],  # DQ: 1wire, DI: not used
+    "aux": [{"mode": 4, "digitalRole": 0}, {"mode": 0, "digitalRole": 0}],  # DQ: 1wire, DI: not used
 }
 
 def get_target_port():
@@ -194,7 +261,7 @@ def wait_for_stable_target_port(stable_seconds=STABLE_DEVICE_SECONDS):
     """
     last_port = None
 
-    print(
+    _act(
         f"Waiting for USB device VID:PID {TARGET_USB_VID:04X}:{TARGET_USB_PID:04X}... (Ctrl+C to stop)"
     )
 
@@ -203,12 +270,12 @@ def wait_for_stable_target_port(stable_seconds=STABLE_DEVICE_SECONDS):
 
         if port is None:
             if last_port is not None:
-                print("Device disappeared, waiting for it to re-appear...")
+                _act("Device disappeared, waiting for it to re-appear...")
             last_port = None
             time.sleep(DEVICE_POLL_INTERVAL_SECONDS)
             continue
 
-        print(f"Device {port} present. Starting upload.")
+        _act(f"Device {port} present. Starting upload.")
         return port
 
 
@@ -255,8 +322,15 @@ def upload_firmware(port, project_dir):
             print(f"Chip : {chip_desc}")
             print(f"MAC  : {mac}")
 
-            print("Erasing flash...")
-            esp.erase_flash()
+            # Erase only NVS and LittleFS partitions so old config/data can't survive reprogramming
+            partitions = _read_partition_table(project_dir)
+            for part_name in ("nvs", "spiffs"):
+                if part_name in partitions:
+                    offset, size = partitions[part_name]
+                    print(f"Erasing '{part_name}' partition (offset=0x{offset:x}, size={size} bytes)...")
+                    esptool.cmds.erase_region(esp, offset, size)
+                else:
+                    _warn(f"⚠ Partition '{part_name}' not found in partitions.csv, skipping erase")
 
             print("Writing bootloader, partition table, and firmware...")
             esptool.cmds.write_flash(
@@ -438,10 +512,95 @@ def verify_http_page(host, port=80, connect_timeout=30, read_timeout=40):
     return False
 
 
-def connect_to_otthing_wifi(profile="OTthing", timeout=20, retries=3):
+def _parse_wifi_interfaces(output):
+    """Split `netsh wlan show interfaces` output into per-interface field dicts."""
+    interfaces = []
+    current = {}
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if current:
+                interfaces.append(current)
+                current = {}
+            continue
+        if ":" in line:
+            key, _, value = line.partition(":")
+            key = key.strip()
+            value = value.strip()
+            if key == "Name":
+                if current:
+                    interfaces.append(current)
+                current = {"Name": value}
+            elif current:
+                current[key] = value
+    if current:
+        interfaces.append(current)
+    return interfaces
+
+
+def _query_netsh_wlan_status():
+    """Return list of WiFi interface field dicts as reported by netsh (SSID/status).
+
+    Note: netsh can silently omit data for some adapters when Windows Location
+    Services are disabled, so this must not be used to enumerate interfaces.
+    """
+    result = subprocess.run(
+        ["cmd", "/c", "netsh wlan show interfaces"],
+        capture_output=True, text=True, encoding="cp850", errors="replace"
+    )
+    return _parse_wifi_interfaces(result.stdout)
+
+
+def list_wifi_interfaces():
+    """Return list of WiFi adapter names via PowerShell (unaffected by netsh's
+    Location-Services dependent output, which can silently hide adapters)."""
+    ps_cmd = (
+        "Get-NetAdapter | Where-Object { $_.PhysicalMediaType -like '*802.11*' "
+        "-or $_.MediaType -like '*802.11*' } | Select-Object -ExpandProperty Name"
+    )
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", ps_cmd],
+        capture_output=True, text=True
+    )
+    return [{"Name": name.strip()} for name in result.stdout.splitlines() if name.strip()]
+
+
+def prompt_wifi_interface():
+    """If multiple WiFi interfaces exist, ask the user which one to use."""
+    names = [i.get("Name") for i in list_wifi_interfaces() if i.get("Name")]
+    if len(names) <= 1:
+        return names[0] if names else None
+
+    print("Multiple WiFi interfaces detected:")
+    for idx, name in enumerate(names, 1):
+        print(f"  {idx}. {name}")
+    while True:
+        choice = input(f"Select interface to use [1-{len(names)}]: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(names):
+            return names[int(choice) - 1]
+        print("Invalid selection, try again.")
+
+def disconnect_wifi(profile="OTthing", interface=None):
+    target = f" on interface {interface}" if interface else ""
+    print(f"Disconnecting from WiFi (profile: {profile}){target}...")
+    cmd = f'netsh wlan disconnect'
+    if interface:
+        cmd += f' interface="{interface}"'
+    result = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True)
+    if result.stdout.strip():
+        print(result.stdout.strip())
+    if result.returncode != 0:
+        print(result.stderr.strip())
+        return False
+    return True
+
+def connect_to_otthing_wifi(profile="OTthing", timeout=20, retries=3, interface=None):
     def _netsh_connect():
-        print(f"Connecting to OTthing WiFi (profile: {profile})...")
+        target = f" on interface {interface}" if interface else ""
+        print(f"Connecting to OTthing WiFi (profile: {profile}){target}...")
         cmd = f'netsh wlan connect name="{profile}"'
+        if interface:
+            cmd += f' interface="{interface}"'
         result = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True)
         if result.stdout.strip():
             print(result.stdout.strip())
@@ -457,15 +616,20 @@ def connect_to_otthing_wifi(profile="OTthing", timeout=20, retries=3):
         wait = 8 if attempt == 1 else 5
         disconnected_early = False
         for remaining in range(wait, 0, -1):
-            # Query current WiFi SSID every second during the wait
-            check = subprocess.run(
-                ["cmd", "/c", "netsh wlan show interfaces"],
-                capture_output=True, text=True, encoding="cp850", errors="replace"
-            )
-            ssid_line = next((l.strip() for l in check.stdout.splitlines() if "SSID" in l and "BSSID" not in l), "SSID: ?")
-            state_line = next((l.strip() for l in check.stdout.splitlines() if "Status" in l or "tatus" in l or "Status" in l), "State: ?")
+            # Query current WiFi SSID every second during the wait, scoped to the selected interface
+            all_interfaces = _query_netsh_wlan_status()
+            if interface:
+                selected = next((i for i in all_interfaces if i.get("Name") == interface), None)
+                check_lines = [f"{k}                   : {v}" for k, v in selected.items()] if selected else []
+            else:
+                check_lines = subprocess.run(
+                    ["cmd", "/c", "netsh wlan show interfaces"],
+                    capture_output=True, text=True, encoding="cp850", errors="replace"
+                ).stdout.splitlines()
+            ssid_line = next((l.strip() for l in check_lines if "SSID" in l and "BSSID" not in l), "SSID: ?")
+            state_line = next((l.strip() for l in check_lines if "Status" in l or "tatus" in l or "Status" in l), "State: ?")
             print(f"  [{remaining:2d}s] {state_line} | {ssid_line}")
-            output_lower = check.stdout.lower()
+            output_lower = "\n".join(check_lines).lower()
             # Break early if already associated
             if ("verbunden" in output_lower or "connected" in output_lower) and profile.lower() in output_lower:
                 print(f"  WiFi associated after {wait - remaining + 1}s")
@@ -550,7 +714,7 @@ def wait_for_device_disconnect():
     """
     Wait for the USB device to be disconnected.
     """
-    _warn("Waiting for device to disconnect...")
+    _act("Waiting for device to disconnect...")
     
     while True:
         port = get_target_port()
@@ -610,13 +774,15 @@ def batch_upload(project_dir):
     Press Ctrl+C to stop.
     """
     print("\n=== Batch firmware upload mode ===")
-    print("Connect devices one at a time. Each will be programmed automatically.\n")
+    _act("Connect devices one at a time. Each will be programmed automatically.\n")
 
     # Open the device web UI once at startup; keep reusing the same tab/window.
     config_url = f"http://{DEVICE_IP}"
     print(f"Opening {config_url} (once at startup)...")
     webbrowser.open(config_url)
-    
+
+    wifi_interface = prompt_wifi_interface()
+
     upload_count = 0
     failure_count = 0
     
@@ -626,18 +792,20 @@ def batch_upload(project_dir):
         except KeyboardInterrupt:
             print(f"\n\nBatch mode stopped. Programmed {upload_count} device(s), {failure_count} failure(s).")
             break
-        
+
+        disconnect_wifi(interface=wifi_interface)
         # Upload firmware
         device_info = upload_firmware(stable_port, project_dir)
         if device_info:
             upload_count += 1
 
-            # Wait for device to reconnect after booting into the application
-            wait_for_device_disconnect()
-            wait_for_stable_target_port(stable_seconds=2)
+            # resset device by toggling DTR
+            with serial.Serial(stable_port) as port:
+                time.sleep(.20)
+
             time.sleep(2)
 
-            if not connect_to_otthing_wifi():
+            if not connect_to_otthing_wifi(interface=wifi_interface):
                 failure_count += 1
             elif not verify_tcp_stream(DEVICE_IP, DEVICE_DATA_PORT):
                 failure_count += 1
@@ -653,13 +821,16 @@ def batch_upload(project_dir):
                     _ok("\n" + "=" * 50)
                     _ok(f"  ✓  DEVICE #{upload_count} COMPLETE — ALL STEPS PASSED")
                     _ok("=" * 50 + "\n")
+                    winsound.Beep(800, 100)
+                    winsound.Beep(1200, 100)
+                    winsound.Beep(1600, 100)
         else:
             failure_count += 1
             time.sleep(1)
             continue
         
         # Wait for next device
-        _warn("Connect the next one...")
+        _act("Connect the next one...")
         wait_for_device_disconnect()
         time.sleep(1)
 

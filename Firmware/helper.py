@@ -1,27 +1,47 @@
 import gzip
 import os
+import subprocess
+import sys
+
+try:
+    Import("env")  # type: ignore[name-defined]
+    SOURCE_HTML = os.path.join(env["PROJECT_DATA_DIR"], "index.html")
+    TARGET_HTML = os.path.join(env["PROJECT_DIR"], "include/html.h")
+    REQUIREMENTS_FILE = os.path.join(env["PROJECT_DIR"], "requirements.txt")
+except NameError:
+    env = None
+    REQUIREMENTS_FILE = os.path.join(os.getcwd(), "requirements.txt")
+
+def ensure_requirements_installed():
+    if not os.path.exists(REQUIREMENTS_FILE):
+        return
+    try:
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "-q", "-r", REQUIREMENTS_FILE
+        ])
+    except Exception as install_err:
+        print(f"\033[91mFailed to auto-install requirements.txt: {install_err}\033[0m")
+
 try:
     import minify_html
 except ImportError:
     minify_html = None
-Import("env")
-
-
-def get_bool_project_option(name, default=False):
-    val = env.GetProjectOption(name, str(default)).strip().lower()
-    return val in ("1", "true", "yes", "on")
-
+    ensure_requirements_installed()
+    try:
+        import minify_html
+    except ImportError as import_err:
+        print(f"\033[91mminify_html still unavailable after install attempt: {import_err}\033[0m")
 
 platform = env.PioPlatform()
 board = env.BoardConfig()
 mcu = board.get("build.mcu", "esp32")  # works for ESP8266 and ESP32
 
-def copy_html():
-    print("Creating html.h from index.html");
-    with open(os.path.join(env["PROJECT_DATA_DIR"], "index.html"), "r", encoding="utf-8") as fin:
+def copy_html(env):
+    print("Creating html.h from index.html")
+    with open(SOURCE_HTML, "r", encoding="utf-8") as fin:
         content = fin.read()
         if env["PIOENV"] in ("release", "production") and minify_html is not None:
-            print("minify html");
+            print("minify html")
             content = minify_html.minify(
                 content,
                 # --- JS / CSS ---
@@ -47,12 +67,14 @@ def copy_html():
                 preserve_chevron_percent_template_syntax=False, # preserve <% %> (EJS, ERB, JSP, etc.)
             )
         elif env["PIOENV"] in ("release", "production"):
-            print("minify_html not installed, skipping HTML minification")
+            print("\033[91mminify_html not installed, skipping HTML minification\033[0m")
+            print(f"\033[91mPlatformIO Python: {sys.executable}\033[0m")
+            print("\033[91mInstall with: <that-python> -m pip install minify-html\033[0m")
 
         compressed = gzip.compress(content.encode("utf-8"), compresslevel=9)
         print(f"embed html: {len(content.encode('utf-8'))} bytes raw, {len(compressed)} bytes gzip")
 
-        with open(os.path.join(env["PROJECT_DIR"], "include/html.h"), "w", encoding="utf-8") as fout:
+        with open(TARGET_HTML, "w", encoding="utf-8") as fout:
             fout.write("#pragma once\n")
             fout.write("#include <pgmspace.h>\n\n")
             fout.write(f"const size_t html_gz_len = {len(compressed)};\n")
@@ -74,25 +96,31 @@ def post_build(source, target, env):
     print("build: " + env["BUILD_DIR"])
 
 def before_upload(source, target, env):
-    """Detect OTthing device port if not explicitly set."""
+    if env.get("UPLOAD_PORT") is not None:
+        print("Using manually specified upload port:", env.get("UPLOAD_PORT"))
+        return
+
     from serial.tools import list_ports
     
     TARGET_USB_VID = 0x303A
     TARGET_USB_PID = 0x1001
-    
-    # Check if port is explicitly set via environment
-    forced_port = os.environ.get("OTTHING_UPLOAD_PORT")
-    if forced_port:
-        env.Replace(UPLOAD_PORT=forced_port)
-        return
 
     # Try to detect device by VID/PID
     for d in list_ports.comports():
         if (d.vid == TARGET_USB_VID) and (d.pid == TARGET_USB_PID):
+            print(f"Detected OTthing device on port {d.device}")
             env.Replace(UPLOAD_PORT=d.device)
             return
 
+if env is not None:
+    source_mtime = os.path.getmtime(SOURCE_HTML)
+    target_mtime = 0
+    if os.path.exists(TARGET_HTML):
+        target_mtime = os.path.getmtime(TARGET_HTML)
 
-copy_html()
-env.AddPreAction("upload", before_upload)
-env.AddPostAction("buildprog", post_build)
+    if source_mtime > target_mtime:
+        print("index.html has changed; regenerating html.h")
+        copy_html(env)
+        
+    env.AddPreAction("upload", before_upload)
+    env.AddPostAction("buildprog", post_build)

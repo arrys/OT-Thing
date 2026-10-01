@@ -17,8 +17,11 @@ const char CFGKEY_HOSTNAME[] PROGMEM = "hostname";
 const char CFGKEY_HAPREFIX[] PROGMEM = "haPrefix";
 const char CFGKEY_MQTT[] PROGMEM = "mqtt";
 const char CFGKEY_OUTSIDETEMP[] PROGMEM = "outsideTemp";
-const char CFGKEY_HEATING[] PROGMEM = "heating";
 const char *CFGKEY_AUX PROGMEM = "aux";
+
+PGM_P STR_CONFKEY_HYSTERESIS PROGMEM = "hysteresis";
+PGM_P STR_CONFKEY_HEATING PROGMEM = "heating";
+PGM_P STR_CONFKEY_RETURNLIMIT PROGMEM = "returnLimit";
 
 const char AUTHKEY_SALT[] PROGMEM = "salt";
 const char AUTHKEY_HASH[] PROGMEM = "hash";
@@ -67,16 +70,19 @@ DevConfig::DevConfig():
     authConfigured(false) {
 }
 
-void DevConfig::begin() {
+bool DevConfig::begin() {
     LittleFS.begin(true);
-    update();
+    return update();
 }
 
-void DevConfig::update() {
+bool DevConfig::update() {
     File f = getFile();
     if (f) {
         JsonDocument doc;
-        deserializeJson(doc, f);
+        if (deserializeJson(doc, f) != DeserializationError::Ok) {
+            close(f);
+            return false;
+        }
 
         if (doc[FPSTR(CFGKEY_HOSTNAME)].is<String>())
             hostname = doc[FPSTR(CFGKEY_HOSTNAME)].as<String>();
@@ -119,7 +125,7 @@ void DevConfig::update() {
         }
 
         for (int i=0; i<2; i++) {
-            JsonObject hcfg = doc[FPSTR(CFGKEY_HEATING)][i]; 
+            JsonObject hcfg = doc[FPSTR(STR_CONFKEY_HEATING)][i]; 
             
             JsonObject obj = hcfg[F("roomtemp")];
             roomTemp[i].setConfig(obj);
@@ -127,7 +133,7 @@ void DevConfig::update() {
             obj = hcfg[F("roomsetpoint")];
             roomSetPoint[i].setConfig(obj);
 
-            obj = hcfg[F("returnLimit")];
+            obj = hcfg[FPSTR(STR_CONFKEY_RETURNLIMIT)];
             returnTemp[i].setConfig(obj);
         }
 
@@ -136,6 +142,8 @@ void DevConfig::update() {
 
         f.close();
     }
+    else
+        return false;
 
     authConfigured = false;
     authSalt.clear();
@@ -150,6 +158,7 @@ void DevConfig::update() {
         }
         af.close();
     }
+    return true;
 }
 
 File DevConfig::getFile() {

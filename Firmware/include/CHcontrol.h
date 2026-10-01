@@ -4,20 +4,24 @@
 #include "heatingcurve.h"
 #include "sensors.h"
 #include "HADiscLocal.h"
+#include "scheduler.h"
+#include "sensors.h"
 #include <vector>
 
 template <typename T1>
 class ChannelOverride {
 public:
     bool active; // overriding activated
-    T1 value; // overriden value
+    T1 value; // overriden value (set from roomunit)
+    bool isMasterOverride() const;
 };
 
 class CHcontrol {
 private:
     bool roomCompEnabled() const;
+    bool getChActive() const;
     const uint8_t channel;
-    struct {
+    struct Config {
         double roomSet; // default room set point
         double flow; // default flow temperature 
         struct {
@@ -32,6 +36,16 @@ private:
             double boost; // Kb K/K
         } roomComp;
         bool minSuspend;
+        double minSuspendHyst;
+        struct OutsideSuspend {
+            enum {
+                OUTSIDE_SUSPEND_DISABLED,
+                OUTSIDE_SUSPEND_CURRENT,
+                OUTSIDE_SUSPEND_AVERAGE
+            } type;
+            double hysteresis;
+            double offset;
+        } outsideSuspend;
     } config;
     struct PiCtrl {
         HADiscovery::ClimateMode mode {HADiscovery::MODE_AUTO};
@@ -48,15 +62,9 @@ private:
     bool minSuspended {false};
     bool outSuspended {false};
     HeatingCurve curve;
-    struct SchedulerEntry{
-        uint8_t days;
-        uint16_t time; // minutes after midnight
-        double temp;
-    };
-    std::vector<SchedulerEntry> schedule;
-    int8_t lastSchudleIdx { -1 };
-    bool scheduleActive {false};
-    int8_t getCurrentScheduleIdx() const;
+    Scheduler schedule;
+    double flowTemp;
+    Sensor::Source lastFlowTempSrc;
 public:
     CHcontrol(const uint8_t channel);
     void setConfig(JsonObject &obj, const bool init);
@@ -65,15 +73,19 @@ public:
     bool getChOn();
     double getFlowMax() const;
     bool suspendEnabled() const;
-    void loop();
+    bool loop();
     void loopRoomComp();
     void loopReturnLimit();
     void setMode(const HADiscovery::ClimateMode mode);
     void setRoomComp(const HADiscovery::ClimateMode mode);
-    double flowTemp;
+    bool sendDiscoveries(const bool en);
+    void setFlowTemp(const double temp, const Sensor::Source src);
     double flowMin;
     ChannelOverride<bool> ovrdOn;
     ChannelOverride<double> ovrdTemp;
     HADiscovery::ClimateMode mode {HADiscovery::MODE_AUTO};
-    static bool overrideEnabled; // set if otMode is master && enableSlave
+    struct Turbo {
+        double shift {10.0};
+        time_t endTime {0};
+    } turbo;
 };

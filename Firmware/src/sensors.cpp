@@ -1,6 +1,7 @@
 #include "sensors.h"
 #include <DallasTemperature.h>
 #include "HADiscLocal.h"
+#include "devstatus.h"
 
 Sensor roomTemp[2] = {
     Sensor(0.2),
@@ -34,12 +35,17 @@ Sensor::Sensor(const double alpha):
     lastSensor = this;
 }
 
-void Sensor::set(const double val, const Source src) {
+void Sensor::set(const double val, const Source src, const Source lastSrc) {
     if ((src == this->src) || (src == SOURCE_NA)) {
         value = val;
         if ((!setFlag) || (alpha == 1.0))
             smoothed = val;
         setFlag = true;
+        lastSetSrc = src;
+        if (lastSrc != SOURCE_NA)
+            lastSetSrc = lastSrc;
+        else if (lastSrc != SOURCE_NA)
+            lastSetSrc = lastSrc;
     }
 }
 
@@ -69,18 +75,31 @@ bool Sensor::get(double &val, const bool raw) {
     return setFlag;
 }
 
+void Sensor::writeJson(JsonVariant val) {
+    double d;
+    if (!get(d))
+        val.set(nullptr);
+    else {
+        JsonObject obj = val.to<JsonObject>();
+        obj[F("current")] = round(smoothed * 10) / 10;
+        obj[F("raw")] = round(value * 10) / 10;
+        obj[STR_STATKEY_LASTSETPOINTSRC] = lastSetSrc;
+    }
+}
+
 Sensor::operator bool() const {
     return setFlag;
 }
 
-Sensor* Sensor::findByOwn(const OneWireNode *own) {
+std::vector<Sensor*> Sensor::findByOwn(const OneWireNode *own) {
+    std::vector<Sensor*> result;
     Sensor *item = lastSensor;
     while (item) {
         if (item->own == own)
-            break;
+            result.push_back(item);
         item = item->prevSensor;
     }
-    return item;
+    return result;
 }
 
 void Sensor::setConfig(JsonObject &obj) {
@@ -134,15 +153,15 @@ AutoSensor::AutoSensor():
     memset(values, 0, sizeof(values));
 }
 
-void AutoSensor::set(const double val, const Source src) {
+void AutoSensor::set(const double val, const Source src, const Source lastSrc) {
     if ((this->src == SOURCE_AUTO) && (src != SOURCE_NA)) {
         if (val != values[src]) {
-            Sensor::set(val, this->src);
+            Sensor::set(val, SOURCE_AUTO, lastSrc);
             values[src] = val;
         }
     }
     else
-        Sensor::set(val, src);
+        Sensor::set(val, src, lastSrc);
 }
 
 OutsideTemp::OutsideTemp():
@@ -155,11 +174,11 @@ OutsideTemp::OutsideTemp():
     });
 
     acli.onDisconnect([](void *arg, AsyncClient *client) {
-        client->close(true);
+        client->close();
     });
 
     acli.onError([](void *arg, AsyncClient *client, int8_t error) {
-        client->close(true);
+        client->close();
     });
 }
 
@@ -173,6 +192,55 @@ void OutsideTemp::setConfig(JsonObject &obj) {
         interval = 30000;
     owResult.clear();
     nextMillis = 0;
+}
+
+void OutsideTemp::set(const double val, const Source src, const Source lastSrc) {
+    Sensor::set(val, src, lastSrc);
+
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo, 0))
+        return;
+
+    const int currentHour = timeinfo.tm_hour;
+    if (lastHistPos < 0) {
+        // first call ever: seed all hourly slots so avg is not skewed by zeros
+        for (int i=0; i<sizeof(minValues)/sizeof(minValues[0]); i++)
+            minValues[i] = maxValues[i] = val;
+    }
+    else if (currentHour != lastHistPos)
+        minValues[currentHour] = maxValues[currentHour] = val;
+
+    lastHistPos = currentHour;
+    if (val < minValues[currentHour])
+        minValues[currentHour] = val;
+    if (val > maxValues[currentHour])
+        maxValues[currentHour] = val;
+}
+
+void OutsideTemp::writeJson(JsonVariant val) {
+    Sensor::writeJson(val);
+    if (!setFlag)
+        return;
+
+    JsonObject obj = val.as<JsonObject>();
+    double minVal = value, maxVal = value;
+    for (int i=0; i<sizeof(minValues)/sizeof(minValues[0]); i++) {
+        if (minValues[i] < minVal)
+            minVal = minValues[i];
+        if (maxValues[i] > maxVal)
+            maxVal = maxValues[i];
+    }
+    obj[F("min")] = minVal;
+    obj[F("max")] = maxVal;
+    obj[F("avg")] = getAvg();
+}
+
+double OutsideTemp::getAvg() const {
+    double avgVal = 0;
+    for (int i=0; i<sizeof(minValues)/sizeof(minValues[0]); i++) {
+        avgVal += (minValues[i] + maxValues[i]) / 2.0;
+    }
+    return avgVal / (sizeof(minValues)/sizeof(minValues[0]));
 }
 
 void OutsideTemp::loop() {
@@ -203,7 +271,7 @@ void OutsideTemp::loop() {
         else {
             if (millis() > nextMillis) {
                 nextMillis = millis() + interval;
-                acli.close(true);
+                acli.close();
                 httpState = HTTP_IDLE;
             }
         }
@@ -322,7 +390,7 @@ void OneWireNode::clear() {
     // free all nodes
     while (last) {
         auto node = static_cast<OneWireNode*>(last->next);
-        free(last);
+        delete static_cast<OneWireNode*>(last);
         last = node;
     }
 }
@@ -338,8 +406,8 @@ void OneWireNode::loop() {
         while (node) {
             node->temp = round(ds.getTempC(node->adr) * 10) / 10;
             if (node->temp != DEVICE_DISCONNECTED_C) {
-                Sensor *item = Sensor::findByOwn(node);
-                if (item)
+                std::vector<Sensor*> items = Sensor::findByOwn(node);
+                for (auto item : items)
                     item->set(node->temp, Sensor::SOURCE_1WIRE);
             }
             node = static_cast<OneWireNode*>(node->next);

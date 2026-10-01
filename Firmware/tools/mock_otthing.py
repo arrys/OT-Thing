@@ -1,3 +1,14 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "fastapi>=0.104.0",
+#     "uvicorn[standard]>=0.24.0",
+#     "python-multipart>=0.0.6",
+# ]
+# ///
+
+"""Run with `uv run Firmware/tools/mock_otthing.py` from the repository root."""
+
 from pathlib import Path
 import asyncio
 import copy
@@ -17,6 +28,8 @@ INDEX_FILE = DATA_DIR / "index.html"
 SESSION_COOKIE = "OTSESSID"
 SESSION_TTL_SEC = 30 * 60
 MOCK_CONFIG_MODE = os.getenv("OTTHING_MOCK_CONFIG_MODE", "0") == "1"
+
+scan_state = {"polls": 0}
 
 state = {
     "config": {
@@ -60,7 +73,9 @@ state = {
                 "enableHyst": False,
                 "hysteresis": 0.5,
                 "minSuspend": False,
+                "minSuspHyst": 0.2,
                 "suspOffset": 0.0,
+                "outsideSuspend": {"type": 1, "hysteresis": 0.2, "offset": 0.0},
                 "returnLimit": {"source": 1, "deltaT": 0.0},
             },
             {
@@ -85,7 +100,9 @@ state = {
                 "enableHyst": False,
                 "hysteresis": 0.5,
                 "minSuspend": False,
+                "minSuspHyst": 0.2,
                 "suspOffset": 0.0,
+                "outsideSuspend": {"type": 1, "hysteresis": 0.2, "offset": 0.0},
                 "returnLimit": {"source": 1, "deltaT": 0.0},
             },
         ],
@@ -124,8 +141,11 @@ state = {
         "numWifiDisc": 0,
         "dateTime": "23.04.2026 22:35:59",
         "outsideTemp": 8.4,
-        "coolingCtrl": 35.0,
-        "coolingMode": "off",
+        "cooling": {
+            "setpoint": 35.0,
+            "ctrlMode": False,
+            "action": "off",
+        },
         "wifi": {
             "status": 3,
             "mode": 1,
@@ -185,6 +205,42 @@ state = {
                     "value": "108",
                     "memberId": 8,
                     "smartPowerImplemented": True,
+                },
+            },
+            "smartPower": "low",
+            "txCount": 1000,
+            "rxCount": 995,
+            "invalidCount": 0,
+        },
+        "roomunit": {
+            "ch_set_t": {"result": True, "data": 44.0},
+            "ch_set_t2": {"result": True, "data": 22.3},
+            "room_t": {"result": True, "data": 20.1},
+            "room_t2": {"result": True, "data": 21.1},
+            "room_set_t": {"result": True, "data": 21.3},
+            "room_set_t2": {"result": True, "data": 22.3},
+            "dhw_set_t": {"result": True, "data": 49.0},
+            "status": {
+                "result": True,
+                "data": {
+                    "value": "1a00",
+                    "ch_enable": False,
+                    "dhw_enable": True,
+                    "cooling_enable": False,
+                    "otc_active": True,
+                    "ch2_enable": True,
+                    "summer_mode": False,
+                    "dhw_blocking": False,
+                },
+            },
+            "vent_status": {
+                "result": True,
+                "data": {
+                    "value": "100",
+                    "vent_enable": True,
+                    "open_bypass": False,
+                    "auto_bypass": False,
+                    "free_vent_enable": False,
                 },
             },
             "smartPower": "low",
@@ -325,13 +381,14 @@ state = {
                 "roomAction": "off",
                 "roomsetpoint": 17.0,
                 "roomtemp": 20.1,
-                "flowSetTemp": 44.0,
+                "flowsetpoint": 44.0,
                 "suspended": True,
                 "roomcompInteg": 0.0,
                 "retLimitInteg": 0.0,
                 "flowMin": 25,
                 "reduction": 0.0,
                 "returnTemp": 41.7,
+                "turbo": {"shift": 5.0, "duration": 15},
             },
             {
                 "ovrdTemp": False,
@@ -342,17 +399,19 @@ state = {
                 "roomAction": "off",
                 "roomsetpoint": 26.0,
                 "roomtemp": 21.1,
-                "flowSetTemp": 22.3,
+                "flowsetpoint": 22.3,
                 "suspended": False,
                 "roomcompInteg": 0.0,
                 "retLimitInteg": 0.0,
                 "flowMin": 20,
                 "reduction": 0.0,
                 "returnTemp": 41.7,
+                "turbo": {"shift": 3.0, "duration": 10},
             },
         ],
         "dhw": {
             "ovrd": False,
+            "setpoint": 49.0,
             "ctrlMode": "heat",
             "action": "heating",
         },
@@ -576,13 +635,19 @@ def get_scan(request: Request) -> JSONResponse:
     if denied:
         return denied
 
+    # emulate firmware: first polls report scan in progress (status < 0)
+    scan_state["polls"] += 1
+    if scan_state["polls"] < 4:
+        return JSONResponse({"status": -1})
+
+    scan_state["polls"] = 0
     return JSONResponse(
         {
-            "status": 1,
+            "status": 3,
             "results": [
-                {"ssid": "MockNet", "channel": 1, "rssi": -54},
-                {"ssid": "MockGuest", "channel": 6, "rssi": -71},
-                {"ssid": "MockIoT", "channel": 11, "rssi": -78},
+                {"ssid": "MockNet", "channel": 1, "rssi": -54, "encType": 3, "bssid": "aa:bb:cc:00:11:22"},
+                {"ssid": "MockGuest", "channel": 6, "rssi": -71, "encType": 0, "bssid": "aa:bb:cc:00:11:23"},
+                {"ssid": "MockIoT", "channel": 11, "rssi": -78, "encType": 7, "bssid": "aa:bb:cc:00:11:24"},
             ],
         }
     )
@@ -600,8 +665,10 @@ def get_set(
     chSetTemp2: float | None = None,
     chMode1: str | None = None,
     chMode2: str | None = None,
+    dhwSetTemp: float | None = None,
+    dhwMode: str | None = None,
     coolingCtrl: float | None = None,
-    coolingMode: str | None = None,
+    coolingMode: bool | None = None,
 ) -> JSONResponse:
     denied = require_auth(request)
     if denied:
@@ -632,50 +699,72 @@ def get_set(
         state["status"]["heatercircuit"][0]["ctrlMode"] = chMode1
         mode1 = str(chMode1).lower()
         if mode1 == "off":
-            state["status"]["heatercircuit"][0].pop("flowSetTemp", None)
+            state["status"]["heatercircuit"][0].pop("flowsetpoint", None)
         else:
             restored = state["status"]["master"]["ch_set_t"].get("data")
             if restored is None:
                 restored = state["config"]["heating"][0].get("flow")
             if restored is not None:
-                state["status"]["heatercircuit"][0]["flowSetTemp"] = restored
+                state["status"]["heatercircuit"][0]["flowsetpoint"] = restored
 
     if chMode2 is not None:
         ensure_heatercircuit(1)
         state["status"]["heatercircuit"][1]["ctrlMode"] = chMode2
         mode2 = str(chMode2).lower()
         if mode2 == "off":
-            state["status"]["heatercircuit"][1].pop("flowSetTemp", None)
+            state["status"]["heatercircuit"][1].pop("flowsetpoint", None)
         else:
             restored = state["status"]["master"]["ch_set_t2"].get("data")
             if restored is None:
                 restored = state["config"]["heating"][1].get("flow")
             if restored is not None:
-                state["status"]["heatercircuit"][1]["flowSetTemp"] = restored
+                state["status"]["heatercircuit"][1]["flowsetpoint"] = restored
 
     effective_ch1_mode = chMode1 or (state["status"]["heatercircuit"][0].get("ctrlMode") if state["status"]["heatercircuit"] else None)
     if chSetTemp1 is not None and effective_ch1_mode in {"heat", "on"}:
         state["status"]["master"]["ch_set_t"]["data"] = chSetTemp1
         ensure_heatercircuit(0)
-        state["status"]["heatercircuit"][0]["flowSetTemp"] = chSetTemp1
+        state["status"]["heatercircuit"][0]["flowsetpoint"] = chSetTemp1
 
     effective_ch2_mode = chMode2 or (state["status"]["heatercircuit"][1].get("ctrlMode") if len(state["status"]["heatercircuit"]) > 1 else None)
     if chSetTemp2 is not None and effective_ch2_mode in {"heat", "on"}:
         state["status"]["master"]["ch_set_t2"]["data"] = chSetTemp2
         ensure_heatercircuit(1)
-        state["status"]["heatercircuit"][1]["flowSetTemp"] = chSetTemp2
+        state["status"]["heatercircuit"][1]["flowsetpoint"] = chSetTemp2
+
+    if "dhw" not in state["status"] or not isinstance(state["status"]["dhw"], dict):
+        state["status"]["dhw"] = {}
+
+    if dhwSetTemp is not None:
+        state["status"]["dhw"]["setpoint"] = dhwSetTemp
+        state["status"]["master"]["dhw_set_t"]["data"] = dhwSetTemp
+
+    if dhwMode is not None:
+        mode = str(dhwMode).lower()
+        if mode not in {"off", "heat", "auto"}:
+            mode = "off"
+
+        state["status"]["dhw"]["ctrlMode"] = mode
+        state["status"]["dhw"]["action"] = "off" if mode == "off" else "heating"
+        dhw_enabled = mode != "off"
+        state["status"]["slave"]["status"]["dhw_mode"] = dhw_enabled
+        state["status"]["master"]["status"]["data"]["dhw_enable"] = dhw_enabled
 
     if coolingCtrl is not None:
         ctrl = max(0.0, min(100.0, coolingCtrl))
-        state["status"]["coolingCtrl"] = ctrl
+        if "cooling" not in state["status"] or not isinstance(state["status"]["cooling"], dict):
+            state["status"]["cooling"] = {}
+        state["status"]["cooling"]["setpoint"] = ctrl
         state["status"]["master"]["cooling_ctrl"]["data"] = ctrl
 
     if coolingMode is not None:
-        mode = str(coolingMode).lower()
-        if mode in {"off", "cool"}:
-            state["status"]["coolingMode"] = mode
-            state["status"]["slave"]["status"]["cooling"] = (mode == "cool")
-            state["status"]["master"]["status"]["data"]["cooling_enable"] = (mode == "cool")
+        enabled = bool(coolingMode)
+        if "cooling" not in state["status"] or not isinstance(state["status"]["cooling"], dict):
+            state["status"]["cooling"] = {}
+        state["status"]["cooling"]["ctrlMode"] = enabled
+        state["status"]["cooling"]["action"] = "cooling" if enabled else "off"
+        state["status"]["slave"]["status"]["cooling"] = enabled
+        state["status"]["master"]["status"]["data"]["cooling_enable"] = enabled
 
     return JSONResponse({"ok": True})
 
@@ -861,8 +950,9 @@ const FIELDS = [
     { section: "DHW / cooling", rows: [
         { key: "dhw.ctrlMode", label: "DHW ctrl mode", type: "select", options: ["off","heat","auto"] },
         { key: "dhw.action",   label: "DHW action",    type: "select", options: ["off","heating","cooling","idle"] },
-        { key: "coolingCtrl",  label: "Cooling ctrl (%)",  type: "number", step: 1 },
-        { key: "coolingMode",  label: "Mode",              type: "select", options: ["off","cool"] },
+        { key: "cooling.setpoint", label: "Cooling ctrl (%)", type: "number", step: 1 },
+        { key: "cooling.ctrlMode", label: "Mode",            type: "bool" },
+        { key: "cooling.action",   label: "Cooling action",  type: "select", options: ["off","cooling","idle"] },
     ]},
     { section: "OT Master status", rows: [
         { key: "master.status.data.ch_enable",      label: "CH enable",      type: "bool" },
@@ -888,6 +978,30 @@ const FIELDS = [
         { key: "master.ch_set_t.data",     label: "CH flow setpoint (°C)",  type: "number", step: 0.1 },
         { key: "master.ch_set_t2.data",    label: "CH2 flow setpoint (°C)", type: "number", step: 0.1 },
         { key: "master.cooling_ctrl.data", label: "Cooling ctrl (%)",       type: "number", step: 1 },
+    ]},
+    { section: "OT Roomunit", rows: [
+        { key: "roomunit.ch_set_t.data",       label: "CH flow setpoint (°C)",   type: "number", step: 0.1 },
+        { key: "roomunit.ch_set_t2.data",      label: "CH2 flow setpoint (°C)",  type: "number", step: 0.1 },
+        { key: "roomunit.room_t.data",         label: "Room temp 1 (°C)",        type: "number", step: 0.1 },
+        { key: "roomunit.room_t2.data",        label: "Room temp 2 (°C)",        type: "number", step: 0.1 },
+        { key: "roomunit.room_set_t.data",     label: "Room setpoint 1 (°C)",    type: "number", step: 0.1 },
+        { key: "roomunit.room_set_t2.data",    label: "Room setpoint 2 (°C)",    type: "number", step: 0.1 },
+        { key: "roomunit.dhw_set_t.data",      label: "DHW setpoint (°C)",       type: "number", step: 0.1 },
+        { key: "roomunit.status.data.ch_enable",       label: "CH enable",        type: "bool" },
+        { key: "roomunit.status.data.dhw_enable",      label: "DHW enable",       type: "bool" },
+        { key: "roomunit.status.data.cooling_enable",  label: "Cooling enable",   type: "bool" },
+        { key: "roomunit.status.data.otc_active",      label: "OTC active",       type: "bool" },
+        { key: "roomunit.status.data.ch2_enable",      label: "CH2 enable",       type: "bool" },
+        { key: "roomunit.status.data.summer_mode",     label: "Summer mode",      type: "bool" },
+        { key: "roomunit.status.data.dhw_blocking",    label: "DHW blocking",     type: "bool" },
+        { key: "roomunit.vent_status.data.vent_enable",      label: "Vent enable",      type: "bool" },
+        { key: "roomunit.vent_status.data.open_bypass",      label: "Open bypass",      type: "bool" },
+        { key: "roomunit.vent_status.data.auto_bypass",      label: "Auto bypass",      type: "bool" },
+        { key: "roomunit.vent_status.data.free_vent_enable", label: "Free vent enable", type: "bool" },
+        { key: "roomunit.smartPower",  label: "Smart power", type: "select", options: ["low", "medium", "high"] },
+        { key: "roomunit.txCount",     label: "Frames sent", type: "number", step: 1 },
+        { key: "roomunit.rxCount",     label: "Frames received", type: "number", step: 1 },
+        { key: "roomunit.invalidCount",label: "Frames invalid", type: "number", step: 1 },
     ]},
     { section: "OT Slave status", rows: [
         { key: "slave.status.fault",      label: "Fault",      type: "bool" },
@@ -928,7 +1042,7 @@ const FIELDS = [
     { section: "Heater circuit 1", rows: [
         { key: "heatercircuit.0.roomsetpoint", label: "Room setpoint (°C)", type: "number", step: 0.5 },
         { key: "heatercircuit.0.roomtemp",     label: "Room temp (°C)",     type: "number", step: 0.1 },
-        { key: "heatercircuit.0.flowSetTemp",  label: "Flow set temp (°C)", type: "number", step: 0.1 },
+        { key: "heatercircuit.0.flowsetpoint",  label: "Flow set temp (°C)", type: "number", step: 0.1 },
         { key: "heatercircuit.0.returnTemp",   label: "Return temp (°C)",   type: "number", step: 0.1 },
         { key: "heatercircuit.0.roomcompInteg", label: "RoomComp integ",     type: "number", step: 0.1 },
         { key: "heatercircuit.0.retLimitInteg", label: "ReturnLimit integ",  type: "number", step: 0.1 },
@@ -937,11 +1051,13 @@ const FIELDS = [
         { key: "heatercircuit.0.action",       label: "Action",             type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.0.roomAction",   label: "Room action",        type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.0.suspended",    label: "Suspended",          type: "bool" },
+        { key: "heatercircuit.0.turbo.shift",    label: "Turbo shift (°C)",   type: "number", step: 0.5 },
+        { key: "heatercircuit.0.turbo.duration", label: "Turbo time left (min)", type: "number", step: 1 },
     ]},
     { section: "Heater circuit 2", rows: [
         { key: "heatercircuit.1.roomsetpoint", label: "Room setpoint (°C)", type: "number", step: 0.5 },
         { key: "heatercircuit.1.roomtemp",     label: "Room temp (°C)",     type: "number", step: 0.1 },
-        { key: "heatercircuit.1.flowSetTemp",  label: "Flow set temp (°C)", type: "number", step: 0.1 },
+        { key: "heatercircuit.1.flowsetpoint",  label: "Flow set temp (°C)", type: "number", step: 0.1 },
         { key: "heatercircuit.1.returnTemp",   label: "Return temp (°C)",   type: "number", step: 0.1 },
         { key: "heatercircuit.1.roomcompInteg", label: "RoomComp integ",     type: "number", step: 0.1 },
         { key: "heatercircuit.1.retLimitInteg", label: "ReturnLimit integ",  type: "number", step: 0.1 },
@@ -950,6 +1066,8 @@ const FIELDS = [
         { key: "heatercircuit.1.action",       label: "Action",             type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.1.roomAction",   label: "Room action",        type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.1.suspended",    label: "Suspended",          type: "bool" },
+        { key: "heatercircuit.1.turbo.shift",    label: "Turbo shift (°C)",   type: "number", step: 0.5 },
+        { key: "heatercircuit.1.turbo.duration", label: "Turbo time left (min)", type: "number", step: 1 },
     ]},
 ];
 

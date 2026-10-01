@@ -7,7 +7,7 @@
 
 extern class DevConfig {
 private:
-    void update();
+    bool update();
     bool writeBufFlag;
     String hostname;
     int timezone;
@@ -16,7 +16,7 @@ private:
     String authHash;
 public:
     DevConfig();
-    void begin();
+    bool begin();
     File getFile();
     void write(String &str);
     void remove();
@@ -27,8 +27,13 @@ public:
     bool clearUiCredentials();
     String getHostname() const;
     int getTimezone() const;
+    bool masterOvrdEnabled; // set if otMode is master/test and slave is enabled
 } devconfig;
 
 extern const char CFG_FILENAME[] PROGMEM;
+
+extern PGM_P STR_CONFKEY_HYSTERESIS PROGMEM;
+extern PGM_P STR_CONFKEY_HEATING PROGMEM;
+extern PGM_P STR_CONFKEY_RETURNLIMIT PROGMEM;
 
 #endif

@@ -34,7 +34,6 @@ public:
         TOPIC_OVERRIDECHON2,
         TOPIC_OVERRIDECHFLOW1,
         TOPIC_OVERRIDECHFLOW2,
-        TOPIC_OVERRIDEDHW,
         TOPIC_VENTSETPOINT,
         TOPIC_VENTENABLE,
         TOPIC_OPENBYPASS,
@@ -46,6 +45,10 @@ public:
         TOPIC_DHWBLOCKING,
         TOPIC_COOLINGMODE,
         TOPIC_COOLINGCTRL,
+        TOPIC_TURBOSHIFT1,
+        TOPIC_TURBOSHIFT2,
+        TOPIC_TURBODURATION1,
+        TOPIC_TURBODURATION2,
         TOPIC_UNKNOWN // has to be at end of list!
     };
     enum ValueTemplateType {
@@ -53,8 +56,11 @@ public:
         VALTMPL_DHW,
         VALTMPL_SLAVE,
         VALTMPL_MASTER,
+        VALTMPL_ROOMUNIT,
         VALTMPL_HEATING_CIRCUIT,
-        VALTMPL_FLAMESTATS
+        VALTMPL_FLAMESTATS,
+        VALTMPL_COOLING,
+        VALTMPL_VENT
     };
     Mqtt();
     void begin();
@@ -63,7 +69,8 @@ public:
     void setConfig(const MqttConfig conf);
     bool publish(String topic, JsonDocument &payload, const bool retain);
     void onMessage(const char *topic, String &payload);
-    bool setValue(const String &key, const String &value, const bool send = false);
+    bool setValue(const String &key, const String &value, const bool viaHttp = false);
+    void sendValue(const MqttTopic topic, const String &value, const bool retain = true);
     String getBaseTopic();
     static String getTopicString(const MqttTopic topic);
     String getCmdTopic(const MqttTopic topic);
