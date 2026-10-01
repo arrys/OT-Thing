@@ -20,6 +20,53 @@ MOCK_CONFIG_MODE = os.getenv("OTTHING_MOCK_CONFIG_MODE", "0") == "1"
 
 scan_state = {"polls": 0}
 
+# Names and default values for the loopback test table exposed via /testdata.
+# Mirrors loopbackTestData[] in src/otcontrol.cpp.
+TESTDATA_ITEMS = {
+    "status": 0x0000,
+    "slave_config_member": 0x0129,
+    "slave_config_member_ventilation": 0x0107,
+    "faultflags": 0x0000,
+    "remote_parameter_flags": 0x0101,
+    "tr_override": 0,
+    "max_capacity_min_mod": 0x1405,
+    "rel_mod": 0x2140,
+    "ch_pressure": 0x0147,
+    "dhw_flowrate": 0x0553,
+    "tboiler": 0x2A00,
+    "tdhw": 0x2800,
+    "toutside": 0x2A00,
+    "tret": 0x2800,
+    "tflow_ch2": 0x2A00,
+    "tdhw2": 0x2800,
+    "texhaust": 0x2A00,
+    "troverride2": 0,
+    "max_tset": 0x2A00,
+    "powercycles": 0x0001,
+    "successful_burner_starts": 0x0064,
+    "ch_pump_starts": 0x0064,
+    "dhw_pump_valve_starts": 0x0064,
+    "dhw_burner_starts": 0x0064,
+    "burner_operation_hours": 0x0064,
+    "ch_pump_operation_hours": 0x0064,
+    "dhw_pump_valve_operation_hours": 0x0064,
+    "dhw_burner_operation_hours": 0x0064,
+    "opentherm_version_slave": 0x0205,
+    "slave_version": 0x0110,
+}
+
+# /topics mirrors Mqtt::topicList[] in src/mqtt.cpp
+MOCK_TOPICS = [
+    "outsideTemp", "dhwSetTemp", "chSetTemp1", "chSetTemp2", "chMinTemp1",
+    "chMinTemp2", "dhwMode", "chMode1", "chMode2", "roomTemp1", "roomTemp2",
+    "roomMode1", "roomMode2", "roomSetpoint1", "roomSetpoint2",
+    "overrideChFlow1", "overrideChFlow2", "overrideChOn1", "overrideChOn2",
+    "ventSetpoint", "ventEnable", "openBypass", "autoBypass",
+    "freeVentEnable", "maxModulation", "bypass", "summerMode", "dhwBlocking",
+    "coolingMode", "coolingCtrl",
+]
+MOCK_BASE_TOPIC = "otthing/mockmac"
+
 state = {
     "config": {
         "hostname": "otthing-mock",
@@ -99,9 +146,9 @@ state = {
             "setpoint": 3,
         },
         "outsideTemp": {
-            "source": 1,
-            "lat": 49.4771,
-            "lon": 10.9887,
+            "source": 0,
+            "lat": 0.0,
+            "lon": 0.0,
             "interval": 300,
         },
         "mqtt": {
@@ -493,11 +540,21 @@ async def post_config(request: Request) -> PlainTextResponse:
     if denied:
         return PlainTextResponse("unauthorized", status_code=401)
 
-    cfg = await request.json()
+    try:
+        cfg = await request.json()
+    except ValueError:
+        return PlainTextResponse("bad request", status_code=400)
+
     if not isinstance(cfg, dict):
         return PlainTextResponse("bad request", status_code=400)
 
-    state["config"] = cfg
+    # Merge and keep heating[] long enough, otherwise /set handlers below
+    # index heating[1] and raise KeyError -> 500 for every later request.
+    if "heating" in cfg and isinstance(cfg["heating"], list):
+        cfg["heating"] = list(cfg["heating"])
+        while len(cfg["heating"]) < 2:
+            cfg["heating"].append(copy.deepcopy(cfg["heating"][0]))
+    state["config"].update(cfg)
     return PlainTextResponse("ok")
 
 
@@ -622,8 +679,30 @@ def get_set(
         return denied
 
     # Backward-compatible shortcut used earlier in UI experiments.
+    # ventSetpoint / ventEnable are real firmware topics but had no handler
+    # here, so the UI showed success for a command that did nothing.
+    ventSetpoint = request.query_params.get("ventSetpoint")
+    ventEnable = request.query_params.get("ventEnable")
+
     if roomSetTemp is not None:
         roomSetpoint1 = roomSetTemp
+
+    if ventSetpoint is not None:
+        vent = state["status"].setdefault("vent", {})
+        if not isinstance(vent, dict):
+            vent = state["status"]["vent"] = {}
+        try:
+            vent["setpoint"] = max(0, min(100, int(float(ventSetpoint))))
+        except ValueError:
+            return PlainTextResponse("invalid ventSetpoint", status_code=400)
+
+    if ventEnable is not None:
+        vent = state["status"].setdefault("vent", {})
+        if not isinstance(vent, dict):
+            vent = state["status"]["vent"] = {}
+        enabled = str(ventEnable).strip().upper() in {"ON", "1", "TRUE"}
+        vent["enable"] = enabled
+        state["status"]["slave"]["status"]["ventilation_mode"] = enabled
 
     if roomSetpoint1 is not None:
         ensure_heatercircuit(0)
@@ -713,6 +792,16 @@ def get_set(
         state["status"]["slave"]["status"]["cooling"] = enabled
         state["status"]["master"]["status"]["data"]["cooling_enable"] = enabled
 
+    # The firmware iterates every query parameter and returns 503 for anything
+    # Mqtt::setValue() does not recognise, so the mock must reject unknown keys
+    # too rather than silently answering 200 (src/portal.cpp).
+    unknown = [k for k in request.query_params
+               if k not in MOCK_TOPICS and k != "roomSetTemp"]
+    if unknown:
+        return PlainTextResponse(
+            f"unknown topic(s): {', '.join(sorted(unknown))}", status_code=503
+        )
+
     return JSONResponse({"ok": True})
 
 
@@ -725,13 +814,54 @@ def get_reboot(request: Request) -> JSONResponse:
     return JSONResponse({"ok": True})
 
 
+def _ot_value_item(name: str, oid: int, value: int, enabled: bool = True) -> dict:
+    """One entry in the shape OTValue::getStatus() produces."""
+    return {
+        name: {
+            "id": oid,
+            "enabled": enabled,
+            "lastMsgType": 5,
+            "numSet": 12,
+            "value": f"{value:04x}",
+            "disc": True,
+        }
+    }
+
+
 @app.get("/otitems")
 def get_otitems(request: Request) -> JSONResponse:
     denied = require_auth(request)
     if denied:
         return denied
 
-    return JSONResponse({"items": [{"id": 0, "name": "Mock item"}]})
+    # Three sibling objects, each mapping an OT value name to its status,
+    # matching firmware src/portal.cpp /otitems.
+    return JSONResponse({
+        "slave": {
+            **_ot_value_item("status", 0, 0x24),
+            **_ot_value_item("flow_t", 3, 13312),
+            **_ot_value_item("rel_mod", 20, 96),
+        },
+        "master": {
+            **_ot_value_item("status", 0, 0x1a00),
+        },
+        "roomunit": {
+            **_ot_value_item("tr", 27, 12736),
+            **_ot_value_item("tr_set", 28, 13312),
+        },
+    })
+
+
+@app.get("/topics")
+def get_topics(request: Request) -> PlainTextResponse:
+    denied = require_auth(request)
+    if denied:
+        return denied
+
+    # Firmware returns one "<basetopic>/<name>/set" line per topic, CRLF
+    # separated (src/portal.cpp).
+    body = "".join(f"{MOCK_BASE_TOPIC}/{name}/set\r\n" for name in MOCK_TOPICS)
+    return PlainTextResponse(body)
 
 
 @app.get("/slaverequest")
@@ -740,8 +870,58 @@ def get_slaverequest(request: Request, id: int = 0, rw: int = 0, data: str = "00
     if denied:
         return denied
 
-    # data low byte >= 0x80 means accepted in UI
-    return JSONResponse({"id": id, "rw": rw, "data": "0080", "request": data})
+    # Firmware replies {type, id, data} on success and 503 when a parameter is
+    # missing or the OT transaction fails (src/portal.cpp).
+    if request.query_params.get("id") is None or request.query_params.get("rw") is None:
+        return PlainTextResponse("missing parameter", status_code=503)
+    # data low byte >= 0x80 means accepted in the UI
+    return JSONResponse({"type": 5, "id": id, "data": "0080"})
+
+
+@app.get("/testdata")
+def get_testdata(request: Request) -> JSONResponse:
+    denied = require_auth(request)
+    if denied:
+        return denied
+
+    return JSONResponse({name: value for name, value in TESTDATA_ITEMS.items()})
+
+
+@app.post("/testdata")
+async def post_testdata(request: Request) -> JSONResponse:
+    denied = require_auth(request)
+    if denied:
+        return denied
+
+    try:
+        payload = await request.json()
+    except ValueError:
+        return PlainTextResponse("bad request", status_code=400)
+
+    if not isinstance(payload, dict):
+        return PlainTextResponse("bad request", status_code=400)
+
+    updated = {}
+    for name, value in payload.items():
+        if name not in TESTDATA_ITEMS:
+            continue
+        if not isinstance(value, int) or not (0 <= value <= 0xFFFF):
+            return PlainTextResponse(f"invalid value for {name}", status_code=400)
+        TESTDATA_ITEMS[name] = value
+        updated[name] = value
+
+    if not updated:
+        return PlainTextResponse("no known testdata key", status_code=400)
+
+    return JSONResponse(updated)
+
+
+# Firmware replies {type, id, data} on success and 503 when a parameter is
+    # missing or the OT transaction fails (src/portal.cpp).
+    if request.query_params.get("id") is None or request.query_params.get("rw") is None:
+        return PlainTextResponse("missing parameter", status_code=503)
+    # data low byte >= 0x80 means accepted in the UI
+    return JSONResponse({"type": 5, "id": id, "data": "0080"})
 
 
 @app.post("/update")
@@ -1607,7 +1787,18 @@ def get_admin() -> HTMLResponse:
 
 @app.post("/admin/status")
 async def post_admin_status(request: Request) -> PlainTextResponse:
-    state["status"] = await request.json()
+    # Merge rather than replace: replacing let a single loaded file without
+    # "runtime" make every later GET /status raise KeyError (500) until
+    # restart.
+    try:
+        payload = await request.json()
+    except ValueError:
+        return PlainTextResponse("bad request", status_code=400)
+
+    if not isinstance(payload, dict):
+        return PlainTextResponse("status must be a JSON object", status_code=400)
+
+    state["status"].update(payload)
     return PlainTextResponse("ok")
 
 
