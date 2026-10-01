@@ -126,7 +126,7 @@ When web authentication is configured, protected endpoints require a valid login
 ### Control Endpoints
 
 * **`GET /set?key=value`** - Update settings via query parameters
-  - Examples: `/set?chSetTemp1=50`, `/set?chMode1=heat`
+- Examples: `/set?chSetTemp1=50`, `/set?chMode1=heat`, `/set?maxModulation=100`
   - Use `/topics` to discover supported control keys. URL-encode values when they contain reserved characters.
   - Returns 200 on success, 503 if the value cannot be set
 
@@ -134,7 +134,13 @@ When web authentication is configured, protected endpoints require a valid login
   - `id`: OpenTherm message ID (integer)
   - `rw`: 1 for READ_DATA, 0 for WRITE_DATA
   - `data`: Hex-encoded data value
-  - Returns JSON with response type, ID, and data
+- Returns JSON with response type, ID, and data
+  - Returns 503 if a parameter is missing or the OT transaction does not complete
+
+* **`GET /testdata`** / **`POST /testdata`** - Loopback test data for the local OT slave
+  - GET returns the current table as JSON (used by `tools/settestdata.py`)
+  - POST accepts a JSON object of `{"<name>": <0..65535>}` and updates the table
+  - Only meaningful in loopback test mode (`otMode: 4`)
 
 ### System Endpoints
 
@@ -143,8 +149,9 @@ When web authentication is configured, protected endpoints require a valid login
   - Status field: -2 (scanning in progress), -1 (failed), 0+ (number of networks found)
 
 * **`POST /setwifi`** - Configure WiFi credentials
-  - Parameters: `ssid` and `pass` (URL-encoded)
-  - Triggers a device reboot and a WiFi connection attempt
+- Parameters: `ssid` and `pass` (URL-encoded), both required
+  - Starts a WiFi connection attempt; does not reboot. The device comes back
+    on the new network within a few seconds
 
 * **`GET /reboot`** - Trigger a device reboot
   - Returns 200 and schedules a reboot
@@ -158,6 +165,19 @@ When web authentication is configured, protected endpoints require a valid login
 * **`WebSocket /ws`** - Real-time updates and log streaming
   - Receives log messages and status updates
   - Can be used to monitor device behavior in real time
+
+### Authentication
+
+All endpoints are open on the local network by default. Set a Web UI password in
+the web interface (or via `POST /auth/setup`) to require a login. Once a password
+is configured, the endpoints above require a session cookie.
+
+* **`GET /auth/state`** - Reports whether a password is configured and whether the current session is valid
+* **`POST /auth/login`** - `password` field; returns a session cookie
+* **`POST /auth/logout`** - Ends the current session
+* **`POST /auth/setup`** - `password` (and `delete=1`) to set or remove the password
+
+Note that `/ws` is not covered by the session check.
 
 ## Testing & Development
 
