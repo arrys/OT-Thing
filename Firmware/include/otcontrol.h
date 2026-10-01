@@ -97,7 +97,7 @@ private:
         unsigned long lastTx; // millis
         unsigned long lastTxMsg;
         SemaphoreHandle_t mutex;
-        void sendRequest(const char source, const unsigned long msg);
+        bool sendRequest(const char source, const unsigned long msg);
         void resetCounters();
         void onReceive(const char source, const unsigned long msg);
         void sendResponse(const unsigned long msg, const char source = 0);
@@ -115,7 +115,7 @@ public:
     void begin();
     void loop();
     bool slaveRequest(SlaveRequestStruct &srs);
-    void sendRequest(const char source, const unsigned long msg);
+    bool sendRequest(const char source, const unsigned long msg);
     void getJson(JsonObject &obj);
     void setConfig(JsonObject &config);
     void setChTemp(const double temp, const uint8_t channel);
