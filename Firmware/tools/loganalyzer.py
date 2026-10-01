@@ -114,7 +114,9 @@ FLAG_BITS: dict[int, dict[str, dict[int, str]]] = {
         "lb": {0: "fault", 1: "ventilation mode", 2: "bypass status",
                3: "bypass automatic", 4: "free ventilation status", 6: "diagnostic"},
     },
-    100: {"hb": {0: "manual change priority", 1: "program change priority"}},
+    # msg 100 is an 8 bit value; the firmware tests bits 0/1 of the low byte
+    # (OTValueRemoteOverrideFunction, include/otvalues.h).
+    100: {"lb": {0: "manual change priority", 1: "program change priority"}},
 }
 
 # clear text names (see include/otvalues.h)
@@ -297,7 +299,7 @@ OT_IDS: dict[int, tuple[str, str, str, str]] = {
     97: ("PowerCycles", "u16", "", "counter"),
     98: ("RFsensorStatusInformation", "special", "", "config"),
     99: ("RemoteOverrideOperatingMode", "special", "", "config"),
-    100: ("RemoteOverrideFunction", "flag8/-", "", "config"),
+    100: ("RemoteOverrideFunction", "flag8/lb", "", "config"),
     101: ("StatusSolarStorage", "flag8/flag8", "", "solar"),
     102: ("ASFflagsOEMfaultCodeSolar", "flag8/u8", "", "solar"),
     103: ("SConfigSMemberIDcodeSolar", "flag8/u8", "", "solar"),
@@ -410,6 +412,11 @@ def decode_value(data_id: int, data: int) -> dict[str, Any]:
         out["value"] = data
         out["bits"] = decode_bits(data_id, "hb", hb)
         out["text"] = f"{hb:08b} / {lb}"
+    elif vtype == "flag8/lb":
+        # 8 bit payload carried in the low byte
+        out["value"] = lb
+        out["bits"] = decode_bits(data_id, "lb", lb)
+        out["text"] = f"{lb:08b}"
     elif vtype == "flag8/-":
         out["value"] = hb
         out["bits"] = decode_bits(data_id, "hb", hb)
@@ -570,15 +577,24 @@ class Hub:
 
     async def broadcast(self, msg: dict[str, Any]) -> None:
         payload = json.dumps(msg)
+        # Snapshot under the lock, then send outside it: awaiting one slow
+        # browser tab while holding the lock would also stall device_reader,
+        # which is what feeds the stream.
         async with self.lock:
-            dead = []
-            for ws in self.clients:
-                try:
-                    await ws.send_text(payload)
-                except Exception:
-                    dead.append(ws)
-            for ws in dead:
-                self.clients.discard(ws)
+            targets = list(self.clients)
+        if not targets:
+            return
+        results = await asyncio.gather(
+            *(asyncio.wait_for(ws.send_text(payload), timeout=5)
+              for ws in targets),
+            return_exceptions=True,
+        )
+        dead = [ws for ws, res in zip(targets, results)
+                if isinstance(res, Exception)]
+        if dead:
+            async with self.lock:
+                for ws in dead:
+                    self.clients.discard(ws)
 
     async def add(self, ws: WebSocket) -> None:
         async with self.lock:
@@ -596,10 +612,12 @@ settings: dict[str, Any] = {"device": "", "url": "", "mode": DEFAULT_MODE,
 
 async def device_reader(url: str) -> None:
     timeout = settings["rxTimeout"] or None
+    attempt = 0
     while True:
         try:
             async with websockets.connect(url, ping_interval=20) as ws:
                 await hub.publish(parse_line(f"# connected to {url}"))
+                attempt = 0
                 while True:
                     try:
                         message = await asyncio.wait_for(ws.recv(), timeout)
@@ -616,7 +634,11 @@ async def device_reader(url: str) -> None:
             raise
         except Exception as exc:
             await hub.publish(parse_line(f"# connection lost: {exc}"))
-            await asyncio.sleep(3)
+            # Back off on every exit path, including the read-timeout break above.
+            # Re-dialing immediately would spin once per rxTimeout and each
+            # "# connected" note pushes real history out of the ring buffer.
+            attempt += 1
+            await asyncio.sleep(min(30, 3 * (2 ** min(attempt - 1, 4))))
 
 
 @asynccontextmanager
@@ -989,8 +1011,10 @@ async def clear(scope: str = "all") -> dict[str, str]:
     return {"status": "ok", "scope": scope}
 
 
-# otmode values reported by the firmware: 1/4 master, 2 repeater (3 = master variant)
-OTMODE_TO_MODE = {1: "master", 2: "repeater", 3: "master", 4: "master"}
+# From OTMode in Firmware/include/otcontrol.h:
+#   OTMODE_BYPASS=0, OTMODE_MASTER=1, OTMODE_REPEATER=2, OTMODE_LOOPBACKTEST=4
+# (there is no 3). Re-check this table when the enum changes.
+OTMODE_TO_MODE = {0: "bypass", 1: "master", 2: "repeater", 4: "master"}
 
 
 def fetch_mode(ws_url: str) -> str:
