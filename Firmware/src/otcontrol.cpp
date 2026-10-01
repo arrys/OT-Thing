@@ -24,6 +24,20 @@ constexpr uint16_t nib(uint8_t hb, uint8_t lb) {
     return (hb << 8) | lb;
 }
 
+// Clamp a value decoded off the OpenTherm bus to a plausible range.
+// getFloat() can return up to +/-255 for any 16 bit payload, so an unclamped
+// write from a room unit (or any master in repeater mode) would otherwise feed
+// e.g. 255 C into the heating curve and the boiler setpoint.
+static double clipOt(const double v, const double lo, const double hi) {
+    if (isnan(v))
+        return lo;
+    return (v < lo) ? lo : ((v > hi) ? hi : v);
+}
+
+static double otFloat(const uint32_t msg, const double lo, const double hi) {
+    return clipOt(OpenTherm::getFloat(msg), lo, hi);
+}
+
 // Testdata for local OT slave, can be read by a connected master
 struct OTTestItem loopbackTestData[51] = {
     {Status,                    0x0000}, // no flags set
@@ -137,7 +151,7 @@ OTControl::OTInterface::OTInterface(const uint8_t inPin, const uint8_t outPin, c
     mutex = xSemaphoreCreateRecursiveMutex();
 }
 
-void OTControl::OTInterface::sendRequest(const char source, const unsigned long msg) {
+bool OTControl::OTInterface::sendRequest(const char source, const unsigned long msg) {
     const bool sent = hal.sendRequestAsync(msg);
 
     if (sent) {
@@ -147,6 +161,8 @@ void OTControl::OTInterface::sendRequest(const char source, const unsigned long 
         lastTx = millis();
         lastTxMsg = msg;
     }
+
+    return sent;
 }
 
 void OTControl::OTInterface::resetCounters() {
@@ -425,10 +441,10 @@ void OTControl::loop() {
                 if (OTValue::slaveConfig->hasCh(1) && (chcontrol[1].getFlowMax() > maxCh))
                     maxCh = chcontrol[1].getFlowMax();
                 setMaxCh.sendFloat(maxCh);
+                return;
             }
 
             if (millis() > lastBoilerStatus + 800) {
-                lastBoilerStatus = millis();
                 unsigned long req = OpenTherm::buildSetBoilerStatusRequest(
                     chcontrol[0].getChOn(),
                     dhwControl.getOn(),
@@ -438,7 +454,10 @@ void OTControl::loop() {
                     boilerCtrl.summerMode,
                     boilerCtrl.dhwBlocking);
                 req |= statusReqOvl;
-                sendRequest('T', req);
+                // Only consume the poll slot if the frame was actually accepted,
+                // otherwise a dropped request costs a full 800ms cycle.
+                if (sendRequest('T', req))
+                    lastBoilerStatus = millis();
                 return;
             }  
         }
@@ -460,9 +479,11 @@ bool OTControl::isMaster() const {
     return (otMode == OTMODE_MASTER) || (otMode == OTMODE_LOOPBACKTEST);
 }
 
-void OTControl::sendRequest(const char source, const unsigned long msg) {
-    master.sendRequest(source, msg);
-    if (isMaster()) {
+bool OTControl::sendRequest(const char source, const unsigned long msg) {
+    const bool sent = master.sendRequest(source, msg);
+    // Only cache the value and light the TX LED when the frame really went out,
+    // otherwise the cached master value and the LED claim data never sent.
+    if (sent && isMaster()) {
         OTValue *val = OTValue::getMasterValue(OpenTherm::getDataID(msg));
         if (val) {
             const auto mt = OpenTherm::getMessageType(msg);
@@ -470,6 +491,8 @@ void OTControl::sendRequest(const char source, const unsigned long msg) {
         }
         setLedOTRed(true); // when we're OTMASTER use red LED as TX LED
     }
+
+    return sent;
 }
 
 void OTControl::sendResponse(const unsigned long msg, const char source) {
@@ -542,16 +565,16 @@ void OTControl::OnRxMaster(const unsigned long msg, const OpenThermResponseStatu
         case OpenThermMessageType::READ_ACK:
             switch (id) {
             case Toutside:
-                outsideTemp.set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                outsideTemp.set(otFloat(msg, -50, 60), Sensor::SOURCE_OT);
                 break;
             case Tr:
-                roomTemp[0].set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                roomTemp[0].set(otFloat(msg, 0, 50), Sensor::SOURCE_OT);
                 break;
             case TrCH2:
-                roomTemp[1].set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                roomTemp[1].set(otFloat(msg, 0, 50), Sensor::SOURCE_OT);
                 break;
             case Tret:
-                returnTemp[0].set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                returnTemp[0].set(otFloat(msg, 0, 100), Sensor::SOURCE_OT);
                 break;
             default:
                 break;
@@ -629,7 +652,10 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
             case DayTime: {
                 struct tm timeinfo;
                 if (getLocalTime(&timeinfo, 0)) {
-                    const uint16_t tmp = ((((timeinfo.tm_wday + 1) % 7) + 1) << 13) | (timeinfo.tm_hour << 8) | timeinfo.tm_min;
+                    // OpenTherm DayTime day field is 1=Monday..7=Sunday, while
+                    // tm_wday is 0=Sunday..6=Saturday. Sunday is the only wrap.
+                    const uint16_t dow = (timeinfo.tm_wday == 0) ? 7 : timeinfo.tm_wday;
+                    const uint16_t tmp = (dow << 13) | (timeinfo.tm_hour << 8) | timeinfo.tm_min;
                     resp = OpenTherm::buildResponse(OpenThermMessageType::READ_ACK, id, tmp);
                 }
                 break;
@@ -674,7 +700,12 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
             case Status: {
                 // respond with masterstatus from roomunit and slavestatus from boiler
                 uint16_t data = (msg & 0xFF00) | (otval->getValue() & 0x00FF);
-                resp = OpenTherm::buildResponse(otval->getLastMsgResult(), id, data);
+// Always READ_ACK: getLastMsgResult() can still hold RESERVED or
+                // an error type from an earlier exchange, and isValidResponse()
+                // rejects anything that is not READ_ACK/WRITE_ACK/
+                // UNKNOWN_DATA_ID, so the room unit would see a timeout instead
+                // of the boiler status.
+                resp = OpenTherm::buildResponse(OpenThermMessageType::READ_ACK, id, data);
                 chcontrol[0].ovrdOn.value = (msg & (1<<OTValueMasterStatus::BIT_CH_ENABLE)) != 0;
                 chcontrol[1].ovrdOn.value = (msg & (1<<OTValueMasterStatus::BIT_CH2_ENABLE)) != 0;
                 dhwControl.setOnRU((msg & (1<<OTValueMasterStatus::BIT_DHW_ENABLE)) != 0);
@@ -691,7 +722,7 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
             default: {
                 if (otval != nullptr) {
                     if (otval->hasReply())
-                        resp = OpenTherm::buildResponse(otval->getLastMsgResult(), id, otval->getValue());
+                        resp = OpenTherm::buildResponse(OpenThermMessageType::READ_ACK, id, otval->getValue());
                 }
                 else {
                     otval = OTValue::getMasterValue(id);
@@ -714,32 +745,28 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
 
             switch (id) {
             case TSet: {
-                float val = OpenTherm::getFloat(msg);
-                if (val < 0) val = 0;
-                chcontrol[0].ovrdTemp.value = val;
+                chcontrol[0].ovrdTemp.value = otFloat(msg, 0, 100);
                 if (chcontrol[0].ovrdTemp.active)
                     setBoilerRequest[0].force();
                 break;
             }
             case TsetCH2: {
-                float val = OpenTherm::getFloat(msg);
-                if (val < 0) val = 0;
-                chcontrol[1].ovrdTemp.value = val;
+                chcontrol[1].ovrdTemp.value = otFloat(msg, 0, 100);
                 if (chcontrol[1].ovrdTemp.active)
                     setBoilerRequest[1].force();
                 break;
             }
 
             case TrSet:
-                roomSetPoint[0].set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                roomSetPoint[0].set(otFloat(msg, 5, 35), Sensor::SOURCE_OT);
                 break;
 
             case TrSetCH2:
-                roomSetPoint[1].set(OpenTherm::getFloat(msg), Sensor::SOURCE_OT);
+                roomSetPoint[1].set(otFloat(msg, 5, 35), Sensor::SOURCE_OT);
                 break;
 
             case TdhwSet:
-                dhwControl.setSetpointRU(OpenTherm::getFloat(msg));
+                dhwControl.setSetpointRU(otFloat(msg, 5, 80));
                 break;
 
             default:
@@ -768,7 +795,7 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
                 break;
 
             case TdhwSet:
-                dhwControl.setSetpointRU(OpenTherm::getFloat(msg));
+                dhwControl.setSetpointRU(otFloat(msg, 5, 80));
                 newMsg = OpenTherm::buildRequest(mt, id, OpenTherm::temperatureToData(dhwControl.getTemp()));
                 break;
 
@@ -865,16 +892,16 @@ void OTControl::OnRxSlave(const unsigned long msg, const OpenThermResponseStatus
         double d = OpenTherm::getFloat(newMsg);
         switch (id) {
         case Tr:
-            roomTemp[0].set(d, Sensor::SOURCE_OT);
+            roomTemp[0].set(clipOt(d, 0, 50), Sensor::SOURCE_OT);
             break;
         case TrSet:
-            roomSetPoint[0].set(d, Sensor::SOURCE_OT);
+            roomSetPoint[0].set(clipOt(d, 5, 35), Sensor::SOURCE_OT);
             break;
         case TrCH2:
-            roomTemp[1].set(d, Sensor::SOURCE_OT);
+            roomTemp[1].set(clipOt(d, 0, 50), Sensor::SOURCE_OT);
             break;
         case TrSetCH2:
-            roomSetPoint[1].set(d, Sensor::SOURCE_OT);
+            roomSetPoint[1].set(clipOt(d, 5, 35), Sensor::SOURCE_OT);
             break;
         default:
             break;
@@ -917,6 +944,7 @@ void OTControl::getJson(JsonObject &obj) {
         break;
     case OpenThermResponseStatus::TIMEOUT:
         slaveConnected = false;
+        break;
     default:
         break;
     }
@@ -1150,13 +1178,18 @@ void OTControl::setConfig(JsonObject &config) {
     JsonObject boiler = config[F("boiler")];
     dhwControl.setConfig(boiler);
     
-    boilerCtrl.maxModulation = boiler[F("maxModulation")] | 100;
+    boilerCtrl.maxModulation = constrain(boiler[F("maxModulation")] | 100, 5, 100);
     statusReqOvl = boiler[F("statusReq")] | 0x0000;
     boilerConfig.otc = boiler[F("otc")] | false;
     boilerCtrl.summerMode = boiler[F("summerMode")] | false;
     boilerCtrl.dhwBlocking = boiler[F("dhwBlocking")] | false;
     boilerCtrl.coolOn = boiler[F("coolOn")] | false;
-    boilerCtrl.coolingCtrl = 0;
+    // Only default coolingCtrl on first init. Resetting it here would zero the
+    // signal on every /config save and every reboot, and the force() below would
+    // then write 0% to the boiler, killing active cooling. (init is set to true
+    // at the end of this function.)
+    if (!init)
+        boilerCtrl.coolingCtrl = 0;
     boilerConfig.chOffTemp = boiler[F("chOffTemp")] | 10.0;
     OTValue::setTexhaustAsFloat(boiler[F("texhaustAsFloat")] | false);
 
@@ -1202,7 +1235,9 @@ void OTControl::setOverrideChFlow(const bool ovrd, const uint8_t channel) {
 }
 
 void OTControl::setMaxMod(const int mm) {
-    boilerCtrl.maxModulation = mm;
+    // boilerCtrl.maxModulation is a uint8_t, so an unclamped int would wrap:
+    // -1 became 255 and 256 became 0.
+    boilerCtrl.maxModulation = constrain(mm, 5, 100);
     setMaxModulation.force();
 }
 
