@@ -19,11 +19,23 @@ void handleClientDisconnect(void* arg, AsyncClient* client) {
 
 OtGwCommand::OtGwCommand():
         enableOtEvents(true),
-        server(25238) {
+        server(25238),
+        clientsMutex(xSemaphoreCreateMutex()) {
     server.onClient(&handleNewClient, &server);
 }
 
 void OtGwCommand::onNewClient(void* arg, AsyncClient* client) {
+    SemHelper lock(clientsMutex, OTGW_MUTEX_TIMEOUT_MS);
+    if (!lock) {
+        client->close();
+        return;
+    }
+
+    if (clients.size() >= OTGW_MAX_CLIENTS) {
+        client->close();
+        return;
+    }
+
     clients.push_back(client);
     client->onData(&handleClientData, NULL);
     client->onDisconnect(&handleClientDisconnect, NULL);
@@ -34,24 +46,44 @@ void OtGwCommand::onClientData(void* arg, AsyncClient* client, void *data, size_
 }
 
 void OtGwCommand::onClientDisconnect(void* arg, AsyncClient* client) {
+    // Must drop the pointer here: AsyncTCP destroys the AsyncClient once this
+    // callback returns, so keeping it in clients would leave sendAll() writing
+    // through freed memory and grow the vector without bound.
+    SemHelper lock(clientsMutex, OTGW_MUTEX_TIMEOUT_MS);
+    if (!lock)
+        return;
+
+    for (auto it = clients.begin(); it != clients.end(); ++it) {
+        if (*it == client) {
+            clients.erase(it);
+            break;
+        }
+    }
 }
 
 void OtGwCommand::begin() {
     server.begin();
 }
 
-void OtGwCommand::sendAll(String s) {
-    s += F("\r\n");
-    for (auto client: clients)
-        client->write(s.c_str());
+void OtGwCommand::sendAll(const String &s) {
+    String line(s);
+    line += F("\r\n");
+
+    SemHelper lock(clientsMutex, OTGW_MUTEX_TIMEOUT_MS);
+    if (lock) {
+        for (auto client: clients) {
+            if (client->connected())
+                client->write(line.c_str());
+        }
+    }
 
 #ifdef OT_SERIAL
-    Serial.print(s);
+    Serial.print(line);
 #endif
 
 #ifdef DEBUG
 if (bleClientConnected && bleSerialTx) {
-    bleSerialTx->setValue(s.c_str());
+    bleSerialTx->setValue(line.c_str());
     bleSerialTx->notify();
 }
 #endif
