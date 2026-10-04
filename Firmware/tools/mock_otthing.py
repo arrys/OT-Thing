@@ -30,6 +30,7 @@ SESSION_TTL_SEC = 30 * 60
 MOCK_CONFIG_MODE = os.getenv("OTTHING_MOCK_CONFIG_MODE", "0") == "1"
 
 scan_state = {"polls": 0}
+mock_control = {"status_enabled": True}
 
 # Names and default values for the loopback test table exposed via /testdata.
 # Mirrors loopbackTestData[] in src/otcontrol.cpp.
@@ -187,7 +188,13 @@ state = {
         "USB_connected": False,
         "numWifiDisc": 0,
         "dateTime": "23.04.2026 22:35:59",
-        "outsideTemp": 8.4,
+        "outsideTemp": {
+            "current": 18.4,
+            "raw": 18.4,
+            "min": 0.0,
+            "max": 18.4,
+            "avg": 14.07291653,
+        },
         "cooling": {
             "setpoint": 35.0,
             "ctrlMode": False,
@@ -430,6 +437,7 @@ state = {
                 "roomtemp": 20.1,
                 "flowsetpoint": 44.0,
                 "suspended": True,
+                "suspItems": {"room": True, "minFlow": False, "outside": False},
                 "roomcompInteg": 0.0,
                 "retLimitInteg": 0.0,
                 "flowMin": 25,
@@ -448,6 +456,7 @@ state = {
                 "roomtemp": 21.1,
                 "flowsetpoint": 22.3,
                 "suspended": False,
+                "suspItems": {"room": False, "minFlow": False, "outside": False},
                 "roomcompInteg": 0.0,
                 "retLimitInteg": 0.0,
                 "flowMin": 20,
@@ -570,6 +579,9 @@ def get_index() -> FileResponse:
 
 @app.get("/status")
 def get_status(request: Request) -> JSONResponse:
+    if not mock_control["status_enabled"]:
+        return JSONResponse({"detail": "device offline"}, status_code=503)
+
     denied = require_auth(request)
     if denied:
         return denied
@@ -1040,6 +1052,8 @@ _ADMIN_HTML = """<!DOCTYPE html>
   #reload-btn:hover { background: #444; color: #fff; }
   .load-btn { background: #1a2a3a; color: #4fc3f7; border: 1px solid #334; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.82em; margin-bottom: 16px; margin-right: 8px; }
   .load-btn:hover { background: #0d1b2a; color: #fff; }
+        .mock-control { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px; border: 1px solid #754040; border-radius: 8px; background: #291c25; color: #f2b8b8; font-size: 0.84em; }
+        .mock-control input { width: 18px; height: 18px; accent-color: #ef5350; }
     .quick-set { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px; border: 1px solid #334; border-radius: 8px; background: #1a1a2a; }
     .quick-set input[type=text], .quick-set input[type=number], .quick-set select { background: #0d1b2a; color: #eee; border: 1px solid #334; border-radius: 4px; padding: 5px 8px; font-family: inherit; font-size: 0.82em; }
     .quick-set input[type=checkbox].value-input { width: 18px; height: 18px; min-width: 18px; accent-color: #4fc3f7; }
@@ -1079,6 +1093,10 @@ _ADMIN_HTML = """<!DOCTYPE html>
 <input type="file" id="file-status" accept=".json,application/json" style="display:none" onchange="loadJsonFile(this,'status')">
 <button class="load-btn" onclick="document.getElementById('file-config').click()">📂 Load config JSON</button>
 <input type="file" id="file-config" accept=".json,application/json" style="display:none" onchange="loadJsonFile(this,'config')">
+<label class="mock-control" for="statusEndpointDisabled">
+    <input id="statusEndpointDisabled" type="checkbox" onchange="setStatusEndpointDisabled(this.checked)">
+    Disable /status endpoint (simulate device offline)
+</label>
 <div class="quick-set">
     <input id="customPath" class="path-input" list="statusPathList" type="text" placeholder="status path, e.g. slave.status.flame">
     <datalist id="statusPathList"></datalist>
@@ -1120,7 +1138,11 @@ _ADMIN_HTML = """<!DOCTYPE html>
 <script>
 const FIELDS = [
     { section: "General", rows: [
-        { key: "outsideTemp",  label: "Outside temp (°C)", type: "number", step: 0.1 },
+        { key: "outsideTemp.current", label: "Outside temp (°C)", type: "number", step: 0.1 },
+        { key: "outsideTemp.raw", label: "Outside raw temp (°C)", type: "number", step: 0.1 },
+        { key: "outsideTemp.min", label: "Outside min temp (°C)", type: "number", step: 0.1 },
+        { key: "outsideTemp.max", label: "Outside max temp (°C)", type: "number", step: 0.1 },
+        { key: "outsideTemp.avg", label: "Outside avg temp (°C)", type: "number", step: 0.1 },
         { key: "runtime",      label: "Runtime (s)",       type: "number", step: 1 },
         { key: "USB_connected", label: "USB connected",    type: "bool" },
         { key: "bypass",        label: "Bypass",           type: "bool" },
@@ -1231,6 +1253,9 @@ const FIELDS = [
         { key: "heatercircuit.0.action",       label: "Action",             type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.0.roomAction",   label: "Room action",        type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.0.suspended",    label: "Suspended",          type: "bool" },
+        { key: "heatercircuit.0.suspItems.room", label: "Suspended by room", type: "bool" },
+        { key: "heatercircuit.0.suspItems.minFlow", label: "Suspended by min. flow", type: "bool" },
+        { key: "heatercircuit.0.suspItems.outside", label: "Suspended by outside temp", type: "bool" },
         { key: "heatercircuit.0.turbo.shift",    label: "Turbo shift (°C)",   type: "number", step: 0.5 },
         { key: "heatercircuit.0.turbo.duration", label: "Turbo time left (min)", type: "number", step: 1 },
     ]},
@@ -1246,6 +1271,9 @@ const FIELDS = [
         { key: "heatercircuit.1.action",       label: "Action",             type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.1.roomAction",   label: "Room action",        type: "select", options: ["off","heating","cooling","idle"] },
         { key: "heatercircuit.1.suspended",    label: "Suspended",          type: "bool" },
+        { key: "heatercircuit.1.suspItems.room", label: "Suspended by room", type: "bool" },
+        { key: "heatercircuit.1.suspItems.minFlow", label: "Suspended by min. flow", type: "bool" },
+        { key: "heatercircuit.1.suspItems.outside", label: "Suspended by outside temp", type: "bool" },
         { key: "heatercircuit.1.turbo.shift",    label: "Turbo shift (°C)",   type: "number", step: 0.5 },
         { key: "heatercircuit.1.turbo.duration", label: "Turbo time left (min)", type: "number", step: 1 },
     ]},
@@ -1578,6 +1606,22 @@ async function sendValue(key, value) {
   } catch(e) { showToast(e.message, true); }
 }
 
+async function setStatusEndpointDisabled(disabled) {
+    try {
+        const r = await fetch('/admin/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({statusEnabled: !disabled})
+        });
+        if (!r.ok)
+            throw new Error('Error ' + r.status);
+        showToast(disabled ? '/status disabled' : '/status enabled');
+    } catch (err) {
+        document.getElementById('statusEndpointDisabled').checked = !disabled;
+        showToast(err.message, true);
+    }
+}
+
 function collectLeafPaths(obj, prefix = '') {
     const paths = [];
     if (obj === null || obj === undefined)
@@ -1795,7 +1839,11 @@ function buildUI(status) {
 }
 
 async function reload() {
-  const r = await fetch('/status');
+    const r = await fetch('/status');
+        if (!r.ok) {
+                showToast('/status unavailable (' + r.status + ')', true);
+                return;
+        }
     const status = await r.json();
     applyStatus(status);
     updatePathSuggestions(status);
@@ -1814,8 +1862,7 @@ async function loadJsonFile(input, target) {
   if (r.ok) {
     showToast(`Loaded ${target} from ${file.name}`);
         if (target === 'status') {
-            const s = await fetch('/status');
-            buildUI(await s.json());
+            buildUI(data);
         } else {
             const c = await fetch('/config');
             latestConfig = await c.json();
@@ -1849,12 +1896,14 @@ async function loadJsonFile(input, target) {
 
         initJsonInspectorControls();
 
-    const [statusResp, configResp] = await Promise.all([
-            fetch('/status'),
+        const [controlResp, configResp] = await Promise.all([
+            fetch('/admin/control'),
             fetch('/config'),
     ]);
+        const control = await controlResp.json();
+        document.getElementById('statusEndpointDisabled').checked = !control.statusEnabled;
     latestConfig = await configResp.json();
-    buildUI(await statusResp.json());
+        buildUI(control.status);
 })();
 </script>
 </body>
@@ -1881,6 +1930,25 @@ async def post_admin_status(request: Request) -> PlainTextResponse:
 
     state["status"].update(payload)
     return PlainTextResponse("ok")
+
+
+@app.get("/admin/control")
+def get_admin_control() -> JSONResponse:
+    return JSONResponse({
+        "statusEnabled": mock_control["status_enabled"],
+        "status": state["status"],
+    })
+
+
+@app.post("/admin/control")
+async def post_admin_control(request: Request) -> JSONResponse:
+    control = await request.json()
+    status_enabled = control.get("statusEnabled") if isinstance(control, dict) else None
+    if not isinstance(status_enabled, bool):
+        return JSONResponse({"detail": "statusEnabled must be boolean"}, status_code=400)
+
+    mock_control["status_enabled"] = status_enabled
+    return JSONResponse({"statusEnabled": status_enabled})
 
 
 @app.post("/admin/state")
