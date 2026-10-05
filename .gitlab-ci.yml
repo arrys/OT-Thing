@@ -1,0 +1,131 @@
+# GitLab CI for the rys remote (self-hosted GitLab at git.rys.app).
+#
+# Mirrors .github/workflows/build.yml, adapted to GitLab idioms:
+#   actions/cache      -> cache: keyed on platformio.ini
+#   $GITHUB_OUTPUT     -> dotenv report artifact
+#   gh-release action  -> GitLab `release:` keyword
+#
+# Note on branches: this remote uses main/dev, not master/release.
+# `main` was created mirroring master, `dev` mirrors dev.
+
+stages:
+  - build
+  - release
+
+variables:
+  # Firmware/lib/opentherm_library is a git submodule.
+  GIT_SUBMODULE_STRATEGY: recursive
+  # Tags are needed for the release job to resolve the tag name.
+  GIT_DEPTH: "0"
+  # Keep PlatformIO state inside the project dir so it caches predictably
+  # regardless of runner $HOME layout.
+  PLATFORMIO_CORE_DIR: "$CI_PROJECT_DIR/.platformio"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+.firmware_build:
+  stage: build
+  image: python:3.12-slim
+  cache:
+    key:
+      files:
+        - Firmware/platformio.ini
+      prefix: "pio"
+    paths:
+      - .platformio/packages
+      - .platformio/platforms
+      - .platformio/.cache
+      - .cache/pip
+    policy: pull-push
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
+    - python -m pip install --upgrade pip
+    - python -m pip install platformio
+    # requirements.txt carries fastapi/uvicorn (mock server) and minify-html.
+    - python -m pip install -r Firmware/requirements.txt
+    # Pre-warm the toolchain/platform cache before compiling.
+    - pio pkg install --project-dir Firmware
+    # helper.py executes inside PlatformIO's own interpreter (penv), not this
+    # venv. A release build raises RuntimeError without minify-html there
+    # ("Release builds require minify-html"), so install it into both.
+    - |
+      if [ -x "$PLATFORMIO_CORE_DIR/penv/bin/python" ]; then
+        echo "Installing minify-html into PlatformIO penv"
+        "$PLATFORMIO_CORE_DIR/penv/bin/python" -m pip install --quiet minify-html
+      else
+        echo "WARNING: no PlatformIO penv found; install minify-html manually if the build fails"
+      fi
+  script:
+    - pio run --project-dir Firmware -e release
+    # Surface the version the same way the GitHub job does.
+    - |
+      VERSION=$(grep -oP '(?<=custom_version = ).*' Firmware/platformio.ini | tr -d '[:space:]')
+      echo "Building firmware version ${VERSION}"
+      printf 'version=%s\n' "$VERSION" > build.env
+  artifacts:
+    paths:
+      - Firmware/.pio/build/release/firmware.bin
+      - Firmware/.pio/build/release/partitions.bin
+    reports:
+      dotenv: build.env
+    expire_in: 4 weeks
+
+# Build every merge request, so a broken build is caught before it lands.
+build:mr:
+  extends: .firmware_build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Build pushes to the long-lived branches.
+build:branch:
+  extends: .firmware_build
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "dev"
+
+# Tag builds back the release below.
+build:tag:
+  extends: .firmware_build
+  rules:
+    - if: $CI_COMMIT_TAG
+
+# Tag-driven release: push a tag (e.g. v2.59) to publish a GitLab release with
+# the firmware binary attached.
+release:
+  stage: release
+  image: python:3.12-slim
+  needs:
+    - job: build:tag
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "Publishing release ${CI_COMMIT_TAG}"
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "$CI_COMMIT_TAG"
+    description: "Firmware $CI_COMMIT_TAG"
+    assets:
+      links:
+        - name: "firmware.bin"
+          url: "$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/raw/Firmware/.pio/build/release/firmware.bin?job=build%3Atag"
+          link_type: other
+
+# Optional: notify the update server after a stable (non -RC) release.
+# The GitHub workflow POSTs to a webhook; mirror that here by defining a masked
+# CI/CD variable named WEBHOOK_SECRET and uncommenting this job.
+#
+# notify:
+#   stage: release
+#   image: curlimages/curl:latest
+#   needs: ["release"]
+#   rules:
+#     - if: $CI_COMMIT_TAG
+#   script:
+#     - |
+#       if echo "$CI_COMMIT_TAG" | grep -qi -- '-RC'; then
+#         echo "Prerelease tag; skipping notify"
+#         exit 0
+#       fi
+#       curl -fsS -X POST \
+#         -H "X-Webhook-Token: $WEBHOOK_SECRET" \
+#         https://otthing.seegel-systeme.de/update_firmware.php
