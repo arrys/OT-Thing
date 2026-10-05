@@ -2032,7 +2032,7 @@
     </svg>
     <div id="mainwrapper">
         <h2 id="title"><span class="title-mark">OT</span><span class="title-thing">Thing</span><span id="titleVersion" hidden></span><span id="nocon" hidden>No connection to device...</span></h2>
-        <input id="inject_status" type="file" accept=".json" style="display: none;">
+        <input id="inject_status" type="file" accept=".json" style="display: none;" title="Developer tool: inject a synthetic status payload into the UI">
         <div class="nav">
             <ul>
                 <li tab="dashboard" class="active" role="button" tabindex="0">Dashboard</li>
@@ -2141,8 +2141,8 @@
                         <div class="metric-value"><span id="heroRoomSet1">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group">
-                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(0, -0.5)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(0, 0.5)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(0, -0.5)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(0, 0.5)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
                                 <button class="mode-btn" id="btnRoomModeOff1" type="button" onclick="setRoomMode(0, 'off')" title="set heating channel 1 to off" aria-label="set heating channel 1 to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
@@ -2158,8 +2158,8 @@
                         <div class="metric-value"><span id="heroRoomSet2">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group">
-                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(1, -0.5)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(1, 0.5)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(1, -0.5)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustRoomSetpoint(1, 0.5)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
                                 <button class="mode-btn" id="btnRoomModeOff2" type="button" onclick="setRoomMode(1, 'off')" title="set heating channel 2 to off" aria-label="set heating channel 2 to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
@@ -2175,8 +2175,8 @@
                         <div class="metric-value"><span id="heroFlowSet">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="flowSetStepGroup" hidden>
-                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(0, -0.5)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(0, 0.5)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(0, -0.5)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(0, 0.5)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <button class="turbo-btn" type="button" onclick="openTurboDialog(0)" title="turbo CH1" aria-label="turbo CH1"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-flame"></use></svg></button>
                             <div class="mode-group">
@@ -2193,8 +2193,8 @@
                         <div class="metric-value"><span id="heroFlowSet2">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="flowSetStepGroup2" hidden>
-                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(1, -0.5)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(1, 0.5)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(1, -0.5)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustFlowSetTemp(1, 0.5)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <button class="turbo-btn" type="button" onclick="openTurboDialog(1)" title="turbo CH2" aria-label="turbo CH2"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-flame"></use></svg></button>
                             <div class="mode-group">
@@ -2211,8 +2211,8 @@
                         <div class="metric-value"><span id="heroDhwSet">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="dhwStepGroup" hidden>
-                                <button class="step-btn" type="button" onclick="adjustDhwSetTemp(-1)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustDhwSetTemp(1)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustDhwSetTemp(-1)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustDhwSetTemp(1)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
                                 <button class="mode-btn" id="btnDhwModeOff" type="button" onclick="setDhwMode('off')" title="set DHW to off" aria-label="set DHW to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
@@ -2227,8 +2227,8 @@
                         <div class="metric-value"><span id="heroVentSet">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="ventStepGroup" hidden>
-                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(-1)" aria-label="Decrease ventilation setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(1)" aria-label="Increase ventilation setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(-1)" aria-label="Decrease ventilation setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustVentSetpoint(1)" aria-label="Increase ventilation setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
                                 <button class="mode-btn" id="btnVentModeOff" type="button" onclick="setVentMode(false)" title="set ventilation to off" aria-label="set ventilation to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
@@ -2243,8 +2243,8 @@
                         <div class="metric-value"><span id="heroCoolingCtrl">--</span></div>
                         <div class="metric-actions">
                             <div class="step-group" id="coolingStepGroup">
-                                <button class="step-btn" type="button" onclick="adjustCoolingCtrl(-1)" aria-label="Decrease setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
-                                <button class="step-btn" type="button" onclick="adjustCoolingCtrl(1)" aria-label="Increase setpoint"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustCoolingCtrl(-1)" aria-label="Decrease setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-down"></use></svg></button>
+                                <button class="step-btn" type="button" onclick="adjustCoolingCtrl(1)" aria-label="Increase setpoint" title="Unlabelled control"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-up"></use></svg></button>
                             </div>
                             <div class="mode-group">
                                 <button class="mode-btn" id="btnCoolingModeOff" type="button" onclick="setCoolingMode(false)" title="set cooling mode to off" aria-label="set cooling mode to off"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-power"></use></svg></button>
@@ -2262,7 +2262,7 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Firmware</h5>
-                        <span class="statusvalue" field="fw_version"></span>
+                        <span class="statusvalue" field="fw_version" title="Firmware version reported by the device"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Runtime</h5>
@@ -2270,51 +2270,51 @@
                     </div>
                     <div class="statusfield">
                         <h5>reset reason</h5>
-                        <span class="statusvalue" field="resetInfo"></span>
+                        <span class="statusvalue" field="resetInfo" title="Factory reset and reset-reason information"></span>
                     </div>
                     <div class="statusfield">
                         <h5>MAC</h5>
-                        <span class="statusvalue" field="wifi.mac"></span>
+                        <span class="statusvalue" field="wifi.mac" title="MAC address of the WiFi interface"></span>
                     </div>
                     <div class="statusfield">
                         <h5>IP</h5>
-                        <span class="statusvalue" field="wifi.ipsta"></span>
+                        <span class="statusvalue" field="wifi.ipsta" title="IP address assigned by the WiFi network"></span>
                     </div>
                     <div class="statusfield">
                         <h5>SSID</h5>
-                        <span class="statusvalue" field="wifi.sta_ssid"></span>
+                        <span class="statusvalue" field="wifi.sta_ssid" title="Name of the WiFi network the device is joined to"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Hostname</h5>
-                        <span class="statusvalue" field="wifi.hostname"></span>
+                        <span class="statusvalue" field="wifi.hostname" title="mDNS hostname used on the local network"></span>
                     </div>
                     <div class="statusfield">
                         <h5>MQTT basetopic</h5>
-                        <a href="/topics" target="_blank" rel="noopener noreferrer" class="statusvalue" field="mqtt.basetopic"></a>
+                        <a href="/topics" target="_blank" rel="noopener noreferrer" class="statusvalue" field="mqtt.basetopic" title="Base topic all OTthing MQTT topics are published under"></a>
                     </div>
                     <div class="statusfield">
                         <h5>WiFi status</h5>
-                        <span class="statusvalue" field="wifi.status"></span>
+                        <span class="statusvalue" field="wifi.status" title="WiFi association state"></span>
                     </div>
                     <div class="statusfield">
                         <h5>RSSI</h5>
-                        <span class="statusvalue" field="wifi.rssi" unit="dBm"></span>
+                        <span class="statusvalue" field="wifi.rssi" unit="dBm" title="WiFi signal strength in dBm; closer to zero is better"></span>
                     </div>
                     <div class="statusfield">
                         <h5>WiFi disconnections</h5>
-                        <span class="statusvalue" field="numWifiDisc"></span>
+                        <span class="statusvalue" field="numWifiDisc" title="Number of WiFi networks found in the last scan"></span>
                     </div>
                     <div class="statusfield">
                         <h5>MQTT</h5>
-                        <span class="statusvalue" field="mqtt.connected"></span>
+                        <span class="statusvalue" field="mqtt.connected" title="MQTT broker connection state"></span>
                     </div>
                     <div class="statusfield">
                         <h5>MQTT disconnections</h5>
-                        <span class="statusvalue" field="mqtt.numDisc"></span>
+                        <span class="statusvalue" field="mqtt.numDisc" title="Number of discovery messages sent to the broker"></span>
                     </div>
                     <div class="statusfield">
                         <h5>USB connected</h5>
-                        <span class="statusvalue" field="USB_connected"></span>
+                        <span class="statusvalue" field="USB_connected" title="A USB host is connected to the ESP32-C3 USB port"></span>
                     </div>
                 </div>
             </div>
@@ -2323,7 +2323,7 @@
                 <div class="group">
                     <div class="statusfield">
                         <h5>Status</h5>
-                        <span class="statusvalue" field="owResult"></span>
+                        <span class="statusvalue" field="owResult" title="Result of the last OneWire (1-Wire) bus scan"></span>
                     </div>
                 </div>
             </div>
@@ -2333,395 +2333,395 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Flame</h5>
-                        <span class="statusvalue" field="slave.status.flame"></span>
+                        <span class="statusvalue" field="slave.status.flame" title="Burner flame is lit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Diagnostic</h5>
-                        <span class="statusvalue error" field="slave.status.diagnostic"></span>
+                        <span class="statusvalue error" field="slave.status.diagnostic" title="Service or diagnostic indication is active"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Fault</h5>
-                        <span class="statusvalue error" field="slave.status.fault"></span>
+                        <span class="statusvalue error" field="slave.status.fault" title="Slave fault indication; set when the appliance reports a fault"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heater circuit 1 active</h5>
-                        <span class="statusvalue" field="slave.status.ch_mode"></span>
+                        <span class="statusvalue" field="slave.status.ch_mode" title="Central heating circuit is actively demanding heat"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heater circuit 2 active</h5>
-                        <span class="statusvalue" field="slave.status.ch2_mode"></span>
+                        <span class="statusvalue" field="slave.status.ch2_mode" title="Second heating circuit (CH2) is actively demanding heat"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW active</h5>
-                        <span class="statusvalue" field="slave.status.dhw_mode"></span>
+                        <span class="statusvalue" field="slave.status.dhw_mode" title="Domestic hot water circuit is actively demanding heat"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Cooling</h5>
-                        <span class="statusvalue" field="slave.status.cooling"></span>
+                        <span class="statusvalue" field="slave.status.cooling" title="Appliance is actively running in cooling mode"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. fault</h5>
-                        <span class="statusvalue error" field="slave.vent_status.fault"></span>
+                        <span class="statusvalue error" field="slave.vent_status.fault" title="Ventilation unit fault indication"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. active</h5>
-                        <span class="statusvalue" field="slave.vent_status.vent_active"></span>
+                        <span class="statusvalue" field="slave.vent_status.vent_active" title="Ventilation fan is running"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. bypass open</h5>
-                        <span class="statusvalue" field="slave.vent_status.bypass_open"></span>
+                        <span class="statusvalue" field="slave.vent_status.bypass_open" title="Bypass damper is open"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. bypass auto</h5>
-                        <span class="statusvalue" field="slave.vent_status.bypass_auto"></span>
+                        <span class="statusvalue" field="slave.vent_status.bypass_auto" title="Bypass damper is in automatic position"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Free vent.</h5>
-                        <span class="statusvalue" field="slave.vent_status.free_vent"></span>
+                        <span class="statusvalue" field="slave.vent_status.free_vent" title="Free (continuous) ventilation is active"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. diagnostic</h5>
-                        <span class="statusvalue error" field="slave.vent_status.diagnostic"></span>
+                        <span class="statusvalue error" field="slave.vent_status.diagnostic" title="Ventilation unit service or diagnostic indication"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Service request</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.service_request"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.service_request" title="Service request flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Lockout-reset</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.lockout_reset"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.lockout_reset" title="Lockout reset flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Low water pressure</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.low_water_pressure"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.low_water_pressure" title="Low water pressure flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Gas/flame fault</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.gas_flame_fault"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.gas_flame_fault" title="Gas or flame fault flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Air pressure fault</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.air_pressure_fault"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.air_pressure_fault" title="Air pressure fault flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Water over temp fault</h5>
-                        <span class="statusvalue error" field="slave.fault_flags.water_over_temp"></span>
+                        <span class="statusvalue error" field="slave.fault_flags.water_over_temp" title="Water over-temperature flag from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. service request</h5>
-                        <span class="statusvalue error" field="slave.vent_fault_flags.service_request"></span>
+                        <span class="statusvalue error" field="slave.vent_fault_flags.service_request" title="Service request flag from the ventilation unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. inlet fan fault</h5>
-                        <span class="statusvalue error" field="slave.vent_fault_flags.inlet_fan_fault"></span>
+                        <span class="statusvalue error" field="slave.vent_fault_flags.inlet_fan_fault" title="Inlet fan fault on the ventilation unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. exhaust fan fault</h5>
-                        <span class="statusvalue error" field="slave.vent_fault_flags.exhaust_fan_fault"></span>
+                        <span class="statusvalue error" field="slave.vent_fault_flags.exhaust_fan_fault" title="Exhaust fan fault on the ventilation unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. frost protection</h5>
-                        <span class="statusvalue" field="slave.vent_fault_flags.frost_protection"></span>
+                        <span class="statusvalue" field="slave.vent_fault_flags.frost_protection" title="Frost protection active on the ventilation unit"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Flow temperature</h5>
-                        <span class="statusvalue" field="slave.flow_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t" unit="&deg;C" title="Central heating flow temperature measured by the appliance"></span>
                     </div>
                     
                     <div class="statusfield">
                         <h5>Flow temperature 2</h5>
-                        <span class="statusvalue" field="slave.flow_t2" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t2" unit="&deg;C" title="CH2 flow temperature, only reported when the appliance has a second circuit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_t" unit="&deg;C" title="Domestic hot water delivery temperature"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW temperature 2</h5>
-                        <span class="statusvalue" field="slave.dhw_t2" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.dhw_t2" unit="&deg;C" title="Secondary domestic hot water temperature"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Exhaust temperature</h5>
-                        <span class="statusvalue" field="slave.exhaust_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_t" unit="&deg;C" title="Flue gas temperature"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Outside temperature</h5>
-                        <span class="statusvalue" field="slave.outside_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.outside_t" unit="&deg;C" title="Outside temperature measured by the appliance, used as a fallback when no sensor is configured"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Return temperature</h5>
-                        <span class="statusvalue" field="slave.return_t" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.return_t" unit="&deg;C" title="Central heating return temperature"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Room override temp.</h5>
-                        <span class="statusvalue" field="slave.tr_override" unit="&deg;C"></span>    
+                        <span class="statusvalue" field="slave.tr_override" unit="&deg;C" title="Room setpoint override currently transmitted to the appliance"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Room override temp. 2</h5>
-                        <span class="statusvalue" field="slave.tr_override2" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.tr_override2" unit="&deg;C" title="Room setpoint override for CH2"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Supply inlet temp.</h5>
-                        <span class="statusvalue" field="slave.supply_inlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.supply_inlet_t" unit="&deg;C" title="Supply air temperature at the appliance inlet (ventilation units)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Supply outlet temp.</h5>
-                        <span class="statusvalue" field="slave.supply_outlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.supply_outlet_t" unit="&deg;C" title="Supply air temperature at the appliance outlet (ventilation units)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaut inlet temp.</h5>
-                        <span class="statusvalue" field="slave.exhaust_inlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_inlet_t" unit="&deg;C" title="Exhaust air temperature at the appliance inlet (ventilation units)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaut outlet temp.</h5>
-                        <span class="statusvalue" field="slave.exhaust_outlet_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.exhaust_outlet_t" unit="&deg;C" title="Exhaust air temperature at the appliance outlet (ventilation units)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heat exchanger temp.</h5>
-                        <span class="statusvalue" field="slave.boiler_heat_ex_t" unit="°C"></span>
+                        <span class="statusvalue" field="slave.boiler_heat_ex_t" unit="°C" title="Heat exchanger temperature on the boiler side"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Modulation</h5>
-                        <span class="statusvalue" field="slave.rel_mod" unit="%"></span>
+                        <span class="statusvalue" field="slave.rel_mod" unit="%" title="Relative modulation: burner output as a percentage of maximum capacity"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Rel. ventilation</h5>
-                        <span class="statusvalue" field="slave.rel_vent" unit="%"></span>
+                        <span class="statusvalue" field="slave.rel_vent" unit="%" title="Relative ventilation position reported by the unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>&Oslash; flame ratio (3 h)</h5>
-                        <span class="statusvalue" field="slave.flameStats.duty" unit="%"></span>
+                        <span class="statusvalue" field="slave.flameStats.duty" unit="%" title="Share of operating time the burner was lit, as a percentage"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW flow rate</h5>
-                        <span class="statusvalue" field="slave.dhw_flow_rate" unit="l/min"></span>
+                        <span class="statusvalue" field="slave.dhw_flow_rate" unit="l/min" title="Flow rate through the domestic hot water circuit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Pressure</h5>
-                        <span class="statusvalue" field="slave.ch_pressure" unit="bar"></span>
+                        <span class="statusvalue" field="slave.ch_pressure" unit="bar" title="Water pressure in the central heating circuit"></span>
                     </div>                    
                     <div class="statusfield">
                         <h5>burner op. hours</h5>
-                        <span class="statusvalue" field="slave.burner_op_hours" unit="h"></span>
+                        <span class="statusvalue" field="slave.burner_op_hours" unit="h" title="Hours the burner has been running with the flame on"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW burner op. hours</h5>
-                        <span class="statusvalue" field="slave.dhw_burner_op_hours" unit="h"></span>
+                        <span class="statusvalue" field="slave.dhw_burner_op_hours" unit="h" title="Hours the burner has run during DHW mode"></span>
                     </div>
                     <div class="statusfield">
                         <h5>CH pump op. hours</h5>
-                        <span class="statusvalue" field="slave.chpump_op_hours" unit="h"></span>
+                        <span class="statusvalue" field="slave.chpump_op_hours" unit="h" title="Hours the central heating pump has been running"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW pump/valve op. hours</h5>
-                        <span class="statusvalue" field="slave.dhwpump_op_hours" unit="h"></span>
+                        <span class="statusvalue" field="slave.dhwpump_op_hours" unit="h" title="Hours the DHW pump or valve has been open"></span>
                     </div>
                     <div class="statusfield">
                         <h5>current flametime</h5>
-                        <span class="statusvalue" field="slave.flameStats.currentOnTime" unit="min"></span>
+                        <span class="statusvalue" field="slave.flameStats.currentOnTime" unit="min" title="Current uninterrupted burner runtime"></span>
                     </div>
                     <div class="statusfield">
                         <h5>last flametime</h5>
-                        <span class="statusvalue" field="slave.flameStats.lastOnTime" unit="min"></span>
+                        <span class="statusvalue" field="slave.flameStats.lastOnTime" unit="min" title="Duration of the previous burner run"></span>
                     </div>
                     <div class="statusfield">
                         <h5>&Oslash; flametime (10 cycles)</h5>
-                        <span class="statusvalue" field="slave.flameStats.onTime" unit="min"></span>
+                        <span class="statusvalue" field="slave.flameStats.onTime" unit="min" title="Burner runtime since the last flame statistics reset"></span>
                     </div>
                     <div class="statusfield">
                         <h5>&Oslash; pausetime (10 cycles)</h5>
-                        <span class="statusvalue" field="slave.flameStats.offTime" unit="min"></span>
+                        <span class="statusvalue" field="slave.flameStats.offTime" unit="min" title="Burner off time since the last flame statistics reset"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Burner starts</h5>
-                        <span class="statusvalue" field="slave.burner_starts"></span>    
+                        <span class="statusvalue" field="slave.burner_starts" title="Number of successful burner starts"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>DHW Burner starts</h5>
-                        <span class="statusvalue" field="slave.dhw_burner_starts"></span>    
+                        <span class="statusvalue" field="slave.dhw_burner_starts" title="Number of burner starts during DHW mode"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Unsuccessful burner starts</h5>
-                        <span class="statusvalue" field="slave.unsuccessful_burner_starts"></span>    
+                        <span class="statusvalue" field="slave.unsuccessful_burner_starts" title="Number of burner starts that did not establish a flame"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>CH pump starts</h5>
-                        <span class="statusvalue" field="slave.ch_pump_starts"></span>    
+                        <span class="statusvalue" field="slave.ch_pump_starts" title="Number of central heating pump starts"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>DHW pump starts</h5>
-                        <span class="statusvalue" field="slave.dhw_pump_starts"></span>    
+                        <span class="statusvalue" field="slave.dhw_pump_starts" title="Number of DHW pump or valve starts"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Number flame signal low</h5>
-                        <span class="statusvalue" field="slave.num_flame_signal_low"></span>    
+                        <span class="statusvalue" field="slave.num_flame_signal_low" title="Number of times the flame signal was too low to be trusted"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Power cycles</h5>
-                        <span class="statusvalue" field="slave.power_cycles"></span>    
+                        <span class="statusvalue" field="slave.power_cycles" title="Number of appliance power cycles since reset"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Num. TSPs</h5>
-                        <span class="statusvalue" field="slave.num_tsps"></span>    
+                        <span class="statusvalue" field="slave.num_tsps" title="Number of transparent slave parameters the appliance supports"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Size fault hist. buffer</h5>
-                        <span class="statusvalue" field="slave.size_fhb"></span>    
+                        <span class="statusvalue" field="slave.size_fhb" title="Size of the fault history buffer the appliance provides"></span>    
                     </div>
                     <div class="statusfield">
                         <h5>Boiler fanspeed setpoint</h5>
-                        <span class="statusvalue" field="slave.boiler_fan.setpoint" unit="Hz"></span>
+                        <span class="statusvalue" field="slave.boiler_fan.setpoint" unit="Hz" title="Requested boiler fan speed"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Boiler fanspeed actual</h5>
-                        <span class="statusvalue" field="slave.boiler_fan.actual" unit="Hz"></span>
+                        <span class="statusvalue" field="slave.boiler_fan.actual" unit="Hz" title="Measured boiler fan speed"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Flame current</h5>
-                        <span class="statusvalue" field="slave.flame_current" unit="µA"></span>
+                        <span class="statusvalue" field="slave.flame_current" unit="µA" title="Flame current; a low or unstable value usually means a dirty flame sensor"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OEM fault code</h5>
-                        <span class="statusvalue" field="slave.fault_flags.oem_fault_code"></span>
+                        <span class="statusvalue" field="slave.fault_flags.oem_fault_code" title="OEM-specific fault code from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OEM diagnostic code</h5>
-                        <span class="statusvalue" field="slave.oem_diag_code"></span>
+                        <span class="statusvalue" field="slave.oem_diag_code" title="OEM-specific diagnostic or service code"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. OEM fault code</h5>
-                        <span class="statusvalue" field="slave.vent_fault_flags.oem_vent_fault_code"></span>
+                        <span class="statusvalue" field="slave.vent_fault_flags.oem_vent_fault_code" title="OEM fault code from the ventilation unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>CO2 exhaust</h5>
-                        <span class="statusvalue" field="slave.co2_exhaust" unit="ppm"></span>
+                        <span class="statusvalue" field="slave.co2_exhaust" unit="ppm" title="Carbon dioxide concentration in the exhaust air"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Rel. humidity exhaust</h5>
-                        <span class="statusvalue" field="slave.rel_hum_exhaust" unit="%"></span>
+                        <span class="statusvalue" field="slave.rel_hum_exhaust" unit="%" title="Relative humidity of the exhaust air"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Exhaust fan speed</h5>
-                        <span class="statusvalue" field="slave.exhaust_fan_speed" unit="rpm"></span>
+                        <span class="statusvalue" field="slave.exhaust_fan_speed" unit="rpm" title="Measured exhaust fan speed in rpm"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Supply fan speed</h5>
-                        <span class="statusvalue" field="slave.supply_fan_speed" unit="rpm"></span>
+                        <span class="statusvalue" field="slave.supply_fan_speed" unit="rpm" title="Measured supply fan speed in rpm"></span>
                     </div>
                     <div class="statusfield">
                         <h5>&Oslash; burner starts (3 h)</h5>
-                        <span class="statusvalue" field="slave.flameStats.freq" unit="/h"></span>
+                        <span class="statusvalue" field="slave.flameStats.freq" unit="/h" title="Average burner starts per operating hour"></span>
                     </div>
                 </div>
                 <h4>configuration</h4>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Ctrl-type on/off</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.ctrl_type"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.ctrl_type" title="Control type: clear = modulating, set = on/off only (bit 1)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW present</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.dhw_present"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.dhw_present" title="Appliance supports domestic hot water (slave config bit 0)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Master low-off/pump-ctrl n. a.</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.master_lowoff_pumpctrl"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.master_lowoff_pumpctrl" title="Pump control at low/off is allowed (slave config bit 4)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW storage tank</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.dhw_config"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.dhw_config" title="DHW type: clear = instantaneous or not specified, set = storage tank (bit 3)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>CH2 present</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.ch2_present"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.ch2_present" title="Appliance has a second heating circuit, CH2 (bit 5)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Cooling supported</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.cooling_config"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.cooling_config" title="Appliance supports reversing to cool (slave config bit 2). Not all heat pumps can cool"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heat/cool master ctrl</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.heat_cool_ctrl"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.heat_cool_ctrl" title="Appliance accepts heat/cool mode switching from the controller (bit 7)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW setpoint trans.</h5>
-                        <span class="statusvalue" field="slave.rp_flags.dhw_setpoint_trans"></span>
+                        <span class="statusvalue" field="slave.rp_flags.dhw_setpoint_trans" title="DHW setpoint may be transferred by the controller"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Max. CH setpoint trans.</h5>
-                        <span class="statusvalue" field="slave.rp_flags.max_ch_setpoint_trans"></span>
+                        <span class="statusvalue" field="slave.rp_flags.max_ch_setpoint_trans" title="CH setpoint may be transferred by the controller"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW setpoint R/W</h5>
-                        <span class="statusvalue" field="slave.rp_flags.dhw_setpoint_rw"></span>
+                        <span class="statusvalue" field="slave.rp_flags.dhw_setpoint_rw" title="DHW setpoint is readable and writable"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Max. CH setpoint R/W</h5>
-                        <span class="statusvalue" field="slave.rp_flags.max_ch_setpoint_rw"></span>
+                        <span class="statusvalue" field="slave.rp_flags.max_ch_setpoint_rw" title="CH setpoint is readable and writable"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>DHW min. temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_bounds.min" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_bounds.min" unit="&deg;C" title="Lowest DHW setpoint the appliance will accept"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW max. temperature</h5>
-                        <span class="statusvalue" field="slave.dhw_bounds.max" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.dhw_bounds.max" unit="&deg;C" title="Highest DHW setpoint the appliance will accept"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Min. flow temperature</h5>
-                        <span class="statusvalue" field="slave.ch_bounds.min" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.ch_bounds.min" unit="&deg;C" title="Lowest flow setpoint the appliance will accept"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Max. flow temperature</h5>
-                        <span class="statusvalue" field="slave.ch_bounds.max" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.ch_bounds.max" unit="&deg;C" title="Highest flow setpoint the appliance will accept"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Max. capacity</h5>
-                        <span class="statusvalue" field="slave.max_cap_min_mod.max_capacity" unit="kW"></span>
+                        <span class="statusvalue" field="slave.max_cap_min_mod.max_capacity" unit="kW" title="Maximum boiler capacity in kW, as declared by the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Min. modulation level</h5>
-                        <span class="statusvalue" field="slave.max_cap_min_mod.min_modulation" unit="%"></span>
+                        <span class="statusvalue" field="slave.max_cap_min_mod.min_modulation" unit="%" title="Minimum modulation the appliance can deliver, as a percentage"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Product version</h5>
-                        <span class="statusvalue" field="slave.slave_prod_version"></span>
+                        <span class="statusvalue" field="slave.slave_prod_version" title="Appliance product version and type"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OT version</h5>
-                        <span class="statusvalue" field="slave.slave_ot_version"></span>
+                        <span class="statusvalue" field="slave.slave_ot_version" title="OpenTherm protocol version implemented in the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. product version</h5>
-                        <span class="statusvalue" field="slave.vent_prod_version"></span>
+                        <span class="statusvalue" field="slave.vent_prod_version" title="Ventilation unit product version and type"></span>
                     </div>
                     <div class="statusfield">
                         <h5>vent. OT version</h5>
-                        <span class="statusvalue" field="slave.vent_ot_version"></span>
+                        <span class="statusvalue" field="slave.vent_ot_version" title="OpenTherm protocol version implemented in the ventilation unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Member ID</h5>
-                        <span class="statusvalue" field="slave.slave_config_member.memberId"></span>
+                        <span class="statusvalue" field="slave.slave_config_member.memberId" title="MemberID code the appliance reports for itself (0-255)"></span>
                     </div>
                     <div class="statusfield">
                         <h5>brand</h5>
-                        <span class="statusvalue" field="slave.brand"></span>
+                        <span class="statusvalue" field="slave.brand" title="Brand string read from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>brand version</h5>
-                        <span class="statusvalue" field="slave.brand_version"></span>
+                        <span class="statusvalue" field="slave.brand_version" title="Brand version / model string"></span>
                     </div>
                     <div class="statusfield">
                         <h5>brand serial number</h5>
-                        <span class="statusvalue" field="slave.brand_serial"></span>
+                        <span class="statusvalue" field="slave.brand_serial" title="Brand serial number"></span>
                     </div>
                 </div>
             </div>
@@ -2731,125 +2731,125 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Heater circuit 1 enabled</h5>
-                        <span class="statusvalue" field="master.status.data.ch_enable"></span>
+                        <span class="statusvalue" field="master.status.data.ch_enable" title="CH enable bit sent to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Heater circuit 2 enabled</h5>
-                        <span class="statusvalue" field="master.status.data.ch2_enable"></span>
+                        <span class="statusvalue" field="master.status.data.ch2_enable" title="CH2 enable bit sent to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW enabled</h5>
-                        <span class="statusvalue" field="master.status.data.dhw_enable"></span>
+                        <span class="statusvalue" field="master.status.data.dhw_enable" title="DHW enable bit sent to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Summer mode</h5>
-                        <span class="statusvalue" field="master.status.data.summer_mode"></span>
+                        <span class="statusvalue" field="master.status.data.summer_mode" title="Summer mode bit sent to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW blocking</h5>
-                        <span class="statusvalue" field="master.status.data.dhw_blocking"></span>
+                        <span class="statusvalue" field="master.status.data.dhw_blocking" title="DHW blocking bit sent to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Outside temp. compensation</h5>
-                        <span class="statusvalue" field="master.status.data.otc_active"></span>
+                        <span class="statusvalue" field="master.status.data.otc_active" title="Outdoor reset curve is active"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Smart power implemented</h5>
-                        <span class="statusvalue" field="master.master_config_member.data.smartPowerImplemented"></span>
+                        <span class="statusvalue" field="master.master_config_member.data.smartPowerImplemented" title="Smart Power is implemented and active on this link"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. enable</h5>
-                        <span class="statusvalue" field="master.vent_status.data.vent_enable"></span>
+                        <span class="statusvalue" field="master.vent_status.data.vent_enable" title="Ventilation enable bit sent to the unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. open bypass</h5>
-                        <span class="statusvalue" field="master.vent_status.data.open_bypass"></span>
+                        <span class="statusvalue" field="master.vent_status.data.open_bypass" title="Open bypass bit sent to the unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Vent. bypass auto</h5>
-                        <span class="statusvalue" field="master.vent_status.data.auto_bypass"></span>
+                        <span class="statusvalue" field="master.vent_status.data.auto_bypass" title="Automatic bypass bit sent to the unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Free vent. enable</h5>
-                        <span class="statusvalue" field="master.vent_status.data.free_vent_enable"></span>
+                        <span class="statusvalue" field="master.vent_status.data.free_vent_enable" title="Free ventilation enable bit sent to the unit"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Flow setpoint</h5>
-                        <span class="statusvalue" altroomunit field="master.ch_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" altroomunit field="master.ch_set_t.data" unit="&deg;C" title="Flow setpoint currently commanded to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Flow setpoint 2</h5>
-                        <span class="statusvalue" field="master.ch_set_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.ch_set_t2.data" unit="&deg;C" title="CH2 flow setpoint currently commanded to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW set temperature</h5>
-                        <span class="statusvalue" field="master.dhw_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.dhw_set_t.data" unit="&deg;C" title="DHW setpoint currently commanded to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>max. CH setpoint</h5>
-                        <span class="statusvalue" field="master.max_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.max_set_t.data" unit="&deg;C" title="Highest flow setpoint the appliance accepts"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room temperature</h5>
-                        <span class="statusvalue" field="master.room_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_t.data" unit="&deg;C" title="Room temperature transmitted to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room set temperature</h5>
-                        <span class="statusvalue" field="master.room_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_set_t.data" unit="&deg;C" title="Room setpoint commanded to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room temperature 2</h5>
-                        <span class="statusvalue" field="master.room_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_t2.data" unit="&deg;C" title="CH2 room temperature transmitted to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room set temperature 2</h5>
-                        <span class="statusvalue" field="master.room_set_t2.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.room_set_t2.data" unit="&deg;C" title="CH2 room setpoint commanded to the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>outside temp.</h5>
-                        <span class="statusvalue" field="master.outside_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="master.outside_t.data" unit="&deg;C" title="Outside temperature transmitted to the appliance"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Max. rel. modulation</h5>
-                        <span class="statusvalue" field="master.max_rel_mod.data" unit="%"></span>
+                        <span class="statusvalue" field="master.max_rel_mod.data" unit="%" title="Maximum relative modulation the appliance accepts"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Cooling</h5>
-                        <span class="statusvalue" field="master.cooling_ctrl.data" unit="%"></span>
+                        <span class="statusvalue" field="master.cooling_ctrl.data" unit="%" title="Cooling control signal sent to the appliance, as a percentage"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Ventilation set point</h5>
-                        <span class="statusvalue" field="master.rel_vent_set.data" unit="%"></span>
+                        <span class="statusvalue" field="master.rel_vent_set.data" unit="%" title="Relative ventilation setpoint sent to the unit"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Product version</h5>
-                        <span class="statusvalue" field="master.master_prod_version.data"></span>
+                        <span class="statusvalue" field="master.master_prod_version.data" title="Controller product version and type"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OT version</h5>
-                        <span class="statusvalue" field="master.master_ot_version.data"></span>
+                        <span class="statusvalue" field="master.master_ot_version.data" title="OpenTherm protocol version implemented in this controller"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Member ID</h5>
-                        <span class="statusvalue" field="master.master_config_member.data.memberId"></span>
+                        <span class="statusvalue" field="master.master_config_member.data.memberId" title="MemberID code this controller reports for itself"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames sent</h5>
-                        <span class="statusvalue" field="master.txCount"></span>
+                        <span class="statusvalue" field="master.txCount" title="Frames transmitted towards the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames received</h5>
-                        <span class="statusvalue" field="master.rxCount"></span>
+                        <span class="statusvalue" field="master.rxCount" title="Valid frames received from the appliance"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames timeouts</h5>
-                        <span class="statusvalue" field="master.timeouts"></span>
+                        <span class="statusvalue" field="master.timeouts" title="Requests to the appliance that received no reply"></span>
                     </div>
                 </div>
             </div>
@@ -2859,87 +2859,87 @@
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>CH set temperature</h5>
-                        <span class="statusvalue" field="roomunit.ch_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.ch_set_t.data" unit="&deg;C" title="Flow setpoint requested by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room temperature</h5>
-                        <span class="statusvalue" field="roomunit.room_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.room_t.data" unit="&deg;C" title="Room temperature measured by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Room set temperature</h5>
-                        <span class="statusvalue" field="roomunit.room_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.room_set_t.data" unit="&deg;C" title="Room setpoint requested by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW set temperature</h5>
-                        <span class="statusvalue" field="roomunit.dhw_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.dhw_set_t.data" unit="&deg;C" title="DHW setpoint requested by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Outside temperature</h5>
-                        <span class="statusvalue" field="roomunit.outside_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.outside_t.data" unit="&deg;C" title="Outside temperature supplied by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>max. CH setpoint</h5>
-                        <span class="statusvalue" field="roomunit.max_set_t.data" unit="&deg;C"></span>
+                        <span class="statusvalue" field="roomunit.max_set_t.data" unit="&deg;C" title="Maximum flow setpoint advertised to the room unit"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Heater circuit enabled</h5>
-                        <span class="statusvalue" field="roomunit.status.data.ch_enable"></span>
+                        <span class="statusvalue" field="roomunit.status.data.ch_enable" title="CH enable bit received from the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW enabled</h5>
-                        <span class="statusvalue" field="roomunit.status.data.dhw_enable"></span>
+                        <span class="statusvalue" field="roomunit.status.data.dhw_enable" title="DHW enable bit received from the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Outside temp. compensation</h5>
-                        <span class="statusvalue" field="roomunit.status.data.otc_active"></span>
+                        <span class="statusvalue" field="roomunit.status.data.otc_active" title="Outdoor reset curve requested by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Summer mode</h5>
-                        <span class="statusvalue" field="roomunit.status.data.summer_mode"></span>
+                        <span class="statusvalue" field="roomunit.status.data.summer_mode" title="Summer mode requested by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>DHW blocking</h5>
-                        <span class="statusvalue" field="roomunit.status.data.dhw_blocking"></span>
+                        <span class="statusvalue" field="roomunit.status.data.dhw_blocking" title="DHW blocking requested by the room unit"></span>
                     </div>
                 </div>
                 <div class="flexline">
                     <div class="statusfield">
                         <h5>Max. rel. modulation</h5>
-                        <span class="statusvalue" field="roomunit.max_rel_mod.data" unit="%"></span>
+                        <span class="statusvalue" field="roomunit.max_rel_mod.data" unit="%" title="Maximum modulation advertised to the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Product version</h5>
-                        <span class="statusvalue" field="roomunit.master_prod_version.data"></span>
+                        <span class="statusvalue" field="roomunit.master_prod_version.data" title="Room unit product version and type"></span>
                     </div>
                     <div class="statusfield">
                         <h5>OT version</h5>
-                        <span class="statusvalue" field="roomunit.master_ot_version.data"></span>
+                        <span class="statusvalue" field="roomunit.master_ot_version.data" title="OpenTherm protocol version implemented in the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Member ID</h5>
-                        <span class="statusvalue" field="roomunit.master_config_member.data.memberId"></span>
+                        <span class="statusvalue" field="roomunit.master_config_member.data.memberId" title="MemberID code reported by the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Smart power implemented</h5>
-                        <span class="statusvalue" field="roomunit.master_config_member.data.smartPowerImplemented"></span>
+                        <span class="statusvalue" field="roomunit.master_config_member.data.smartPowerImplemented" title="Room unit reports Smart Power support"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Smart power</h5>
-                        <span class="statusvalue" field="roomunit.smartPower"></span>
+                        <span class="statusvalue" field="roomunit.smartPower" title="Smart Power level currently negotiated on the room unit link"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames sent</h5>
-                        <span class="statusvalue" field="roomunit.txCount"></span>
+                        <span class="statusvalue" field="roomunit.txCount" title="Frames transmitted towards the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames received</h5>
-                        <span class="statusvalue" field="roomunit.rxCount"></span>
+                        <span class="statusvalue" field="roomunit.rxCount" title="Valid frames received from the room unit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Frames invalid</h5>
-                        <span class="statusvalue" field="roomunit.invalidCount"></span>
+                        <span class="statusvalue" field="roomunit.invalidCount" title="Frames received from the room unit that failed the parity or format check"></span>
                     </div>
                 </div>
             </div>
@@ -2959,7 +2959,7 @@
             <div class="group">
                 <h3>Dimensioning</h3>
                 <div class="flexline">
-                    <div class="param range" field="heating.$.flowMax">
+                    <div class="param range" field="heating.$.flowMax" title="Flow setpoint at the coldest outside temperature; the top of the heating curve">
                         <h5>Max. flow temperature</h5>
                         <div class="infobox">
                             Typical system temperatures supply/return:
@@ -2977,12 +2977,12 @@
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input id="flowmax" class="curveparam" type="range" min="30" max="90" step="1">
+                            <input id="flowmax" class="curveparam" type="range" min="30" max="90" step="1" title="Flow setpoint at the coldest outside temperature">
                         </div>
                     </div>
 
                     <!-- Exponent is linear-only, hidden when multipoint curve is active. -->
-                    <div class="param linear-only range" field="heating.$.exponent">
+                    <div class="param linear-only range" field="heating.$.exponent" title="Curve shape between the two end points; higher values make the curve bend more sharply">
                         <h5>Heating surface exponent</h5>
                         <div class="infobox">
                             Depending on the share of conduction, convection, and radiation, the relationship between
@@ -3000,7 +3000,7 @@
                             <div class="valunit">
                                 <span class="value"></span>
                             </div>
-                            <input type="range" class="curveparam" min="1.0" max="1.5" step="0.05">
+                            <input type="range" class="curveparam" min="1.0" max="1.5" step="0.05" title="Slope of the heating curve: how much the setpoint falls per degree of outside temperature">
                         </div>
                     </div>
                 </div>
@@ -3010,18 +3010,18 @@
                 <h3>Setup</h3>
                 <h4></h4>
                 <div class="flexline">
-                    <div class="param range" field="heating.$.flow">
+                    <div class="param range" field="heating.$.flow" title="Heating curve output for this circuit, in &amp;deg;C">
                         <h5>flow setpoint (default)</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input type="range" class="curveparam" min="25" max="90" step="1" />
+                            <input type="range" class="curveparam" min="25" max="90" step="1" / title="Curve shape between the two end points; higher values bend the curve more sharply">
                         </div>
                     </div>
 
-                    <div class="param range" field="heating.$.flowMin">
+                    <div class="param range" field="heating.$.flowMin" title="Flow setpoint at the mildest outside temperature; the bottom of the heating curve">
                         <h5>Min. flow temperature</h5>
                         <div class="infobox">
                             Sets the minimum allowed flow temperature for the heating circuit.
@@ -3036,25 +3036,25 @@
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input id="flowmin" type="range" class="curveparam" min="10" max="40" step="1">
+                            <input id="flowmin" type="range" class="curveparam" min="10" max="40" step="1" title="Flow setpoint at the mildest outside temperature">
                         </div>
                     </div>
 
-                    <div class="param range" field="heating.$.roomsetpoint.temp">
+                    <div class="param range" field="heating.$.roomsetpoint.temp" title="Default room setpoint for this circuit when no schedule or override applies">
                         <h5>Room set temperature (default)</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input id="roomset" type="range" class="curveparam" min="17" max="23" step="0.1">
+                            <input id="roomset" type="range" class="curveparam" min="17" max="23" step="0.1" title="Default room setpoint for this heating circuit">
                         </div>
                     </div>
                 </div>
 
                 <div class="param">
                     <h5>Room setpoint source</h5>
-                    <select field="heating.$.roomsetpoint.source" intval>
+                    <select field="heating.$.roomsetpoint.source" intval title="Where the room setpoint currently comes from">
                         <option value="0">MQTT/HTTP</option>
                         <option value="1">roomunit</option>
                         <option value="5">auto</option>
@@ -3065,7 +3065,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>source</h5>
-                        <select field="heating.$.roomtemp.source" id-options="rtsource-options" intval>
+                        <select field="heating.$.roomtemp.source" id-options="rtsource-options" intval title="Where the room temperature for this circuit comes from">
                             <option value="0">MQTT/HTTP</option>
                             <option value="1">roomunit</option>
                             <option value="2">Bluetooth</option>
@@ -3082,11 +3082,11 @@
                         <div class="params"></div>
                         <div class="params">
                             <h5>address</h5>
-                            <input field="heating.$.roomtemp.adr"/>
+                            <input field="heating.$.roomtemp.adr"/ title="OneWire address of the room sensor for this circuit">
                         </div>
                         <div class="params">
                             <h5>address</h5>
-                            <select class="oneWireAdr" field="heating.$.roomtemp.adr">
+                            <select class="oneWireAdr" field="heating.$.roomtemp.adr" title="OneWire address of the room sensor for this circuit">
                             </select>
                         </div>
                     </div>
@@ -3096,7 +3096,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>source</h5>
-                        <select field="heating.$.returnLimit.source" id-options="retsource-options" intval>
+                        <select field="heating.$.returnLimit.source" id-options="retsource-options" intval title="Which sensor the return limit reads from">
                             <option value="1">OT slave</option>
                             <option value="3">1wire</option>
                         </select>
@@ -3106,7 +3106,7 @@
                         <div></div>
                         <div class="param">
                             <h5>address</h5>
-                            <select class="oneWireAdr" field="heating.$.returnLimit.adr">
+                            <select class="oneWireAdr" field="heating.$.returnLimit.adr" title="OneWire address of the sensor the return limit reads from">
                             </select>
                         </div>
                     </div>
@@ -3125,7 +3125,7 @@
                         </div>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" field="heating.$.overrideOn" />
+                                <input type="checkbox" field="heating.$.overrideOn" / title="Force this circuit on regardless of the schedule">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3141,7 +3141,7 @@
                         </div>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" field="heating.$.overrideFlow" />
+                                <input type="checkbox" field="heating.$.overrideFlow" / title="Flow setpoint forced while the override is on">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3153,40 +3153,40 @@
                     <h5>enable</h5>
                     <div>
                         <label class="switch">
-                            <input class="curveparam" type="checkbox" hideele="roomcompparams" field="heating.$.roomComp.enabled" />
+                            <input class="curveparam" type="checkbox" hideele="roomcompparams" field="heating.$.roomComp.enabled" / title="Enable PI room compensation for this circuit">
                             <span class="slider"></span>
                         </label>
                     </div>
                 </div>
                 <div id="roomcompparams" class="flexline">
-                    <div class="param range" field="heating.$.roomComp.p">
+                    <div class="param range" field="heating.$.roomComp.p" title="Proportional gain of the PI room compensation">
                         <h5>P gain</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">K/K</span>
                             </div>
-                            <input type="range" class="curveparam" min="0" max="4" step="0.1">
+                            <input type="range" class="curveparam" min="0" max="4" step="0.1" title="Room temperature the curve is trimmed towards">
                         </div>
                     </div>
-                    <div class="param range" field="heating.$.roomComp.i">
+                    <div class="param range" field="heating.$.roomComp.i" title="Integral gain of the PI room compensation; a slow trim on the curve">
                         <h5>I gain</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">1/h</span>
                             </div>
-                            <input type="range" min="0" max="1" step="0.1">
+                            <input type="range" min="0" max="1" step="0.1" title="Integral gain of the PI room compensation; a slow trim on the curve">
                         </div>
                     </div>
-                    <div class="param range" field="heating.$.roomComp.boost">
+                    <div class="param range" field="heating.$.roomComp.boost" title="Extra boost applied when the room is well below setpoint">
                         <h5>Boost</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">K/K</span>
                             </div>
-                            <input type="range" class="curveparam" min="0" max="4" step="0.1">
+                            <input type="range" class="curveparam" min="0" max="4" step="0.1" title="Constant shift added to every computed setpoint">
                         </div>
                     </div>
                 </div>
@@ -3206,30 +3206,30 @@
                         </div>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" hideele="suspendparams" field="heating.$.enableHyst" />
+                                <input type="checkbox" hideele="suspendparams" field="heating.$.enableHyst" / title="Enable suspension hysteresis for this circuit">
                                 <span class="slider"></span>
                             </label>
                         </div>
                     </div>
                     <div id="suspendparams" class="flexline">
-                        <div class="param range" field="heating.$.hysteresis">
+                        <div class="param range" field="heating.$.hysteresis" title="Hysteresis around the setpoint, used to decide when the circuit is suspended again">
                             <h5>Hysteresis</h5>
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
                                     <span class="unit">K</span>
                                 </div>
-                                <input type="range" min="0.1" max="2.0" step="0.1">
+                                <input type="range" min="0.1" max="2.0" step="0.1" title="Hysteresis around the setpoint, used to decide when the circuit is suspended again">
                             </div>
                         </div>
-                        <div class="param range" field="heating.$.suspOffset">
+                        <div class="param range" field="heating.$.suspOffset" title="Offset applied to the outside temperature used for suspension decisions">
                             <h5>Offset</h5>
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
                                     <span class="unit">K</span>
                                 </div>
-                                <input type="range" min="0.0" max="10" step="0.1">
+                                <input type="range" min="0.0" max="10" step="0.1" title="Offset applied to the outside temperature used for suspension decisions">
                             </div>
                         </div>
                     </div>
@@ -3249,19 +3249,19 @@
                         </div>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" class="curveparam" hideele="minSuspendHystParams" field="heating.$.minSuspend" />
+                                <input type="checkbox" class="curveparam" hideele="minSuspendHystParams" field="heating.$.minSuspend" / title="Suspend the circuit when the computed setpoint falls below this value">
                                 <span class="slider"></span>
                             </label>
                         </div>
                     </div>
-                    <div id="minSuspendHystParams" class="param range" field="heating.$.minSuspHyst" hidden>
+                    <div id="minSuspendHystParams" class="param range" field="heating.$.minSuspHyst" hidden title="Hysteresis applied to the minimum-flow suspension, to stop it chattering">
                         <h5>Hysteresis</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input type="range" min="0.1" max="2.0" step="0.1">
+                            <input type="range" min="0.1" max="2.0" step="0.1" title="Hysteresis applied to the minimum-flow suspension, to stop it chattering">
                         </div>
                     </div>
                     
@@ -3280,7 +3280,7 @@
                             <b>Tip:</b> Adjust the hysteresis and suspend offset below to fine-tune when heating resumes after suspension.
                         </div>
                         <div>
-                            <select id="outsideSuspendType" class="curveparam" field="heating.$.outsideSuspend.type" hideele="outsideSuspendParams" hideelevalue="1 2" intval>
+                            <select id="outsideSuspendType" class="curveparam" field="heating.$.outsideSuspend.type" hideele="outsideSuspendParams" hideelevalue="1 2" intval title="How outside-temperature suspension is decided">
                                 <option value="0">disabled</option>
                                 <option value="1">current</option>
                                 <option value="2">24 h average</option>
@@ -3288,24 +3288,24 @@
                         </div>
                     </div>
                     <div id="outsideSuspendParams" class="flexline" hidden>
-                        <div class="param range" field="heating.$.outsideSuspend.hysteresis">
+                        <div class="param range" field="heating.$.outsideSuspend.hysteresis" title="Hysteresis around the outside suspension threshold">
                             <h5>Hysteresis</h5>
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
                                     <span class="unit">K</span>
                                 </div>
-                                <input type="range" min="0.1" max="2.0" step="0.1">
+                                <input type="range" min="0.1" max="2.0" step="0.1" title="Hysteresis around the outside suspension threshold">
                             </div>
                         </div>
-                        <div class="param range" field="heating.$.outsideSuspend.offset">
+                        <div class="param range" field="heating.$.outsideSuspend.offset" title="Offset applied to the outside temperature before comparing it to the setpoint">
                             <h5>Offset</h5>
                             <div class="flexline">
                                 <div class="valunit">
                                     <span class="value"></span>
                                     <span class="unit">K</span>
                                 </div>
-                                <input type="range" class="curveparam" min="-5" max="5" step="0.5">
+                                <input type="range" class="curveparam" min="-5" max="5" step="0.5" title="DHW setpoint applied while this schedule block is active">
                             </div>
                         </div>
                     </div>
@@ -3320,7 +3320,7 @@
                         <h5>Multipoint</h5>
                         <div>
                             <label class="switch">
-                                <input id="curveMode" type="checkbox" />
+                                <input id="curveMode" type="checkbox" / title="Heating curve type: simple curve, or multipoint with individually editable points">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3338,12 +3338,12 @@
                     </div>
                     <div class="param curve-only" hidden>
                         <h5> </h5>
-                        <button onclick="copyCurve()">copy from simple curve</button>
+                        <button onclick="copyCurve()" title="Remove this heating curve point" aria-label="Remove this heating curve point">copy from simple curve</button>
                     </div>
                 </div>
                 <div class="flexline">
                     <!-- Gradient/offset are linear-only to keep multipoint mode clean. -->
-                    <div class="param linear-only range" field="heating.$.gradient">
+                    <div class="param linear-only range" field="heating.$.gradient" title="Slope of the heating curve: how much the setpoint falls per degree of outside temperature">
                         <h5>Gradient</h5>
                         <div class="infobox">
                             Defines how strongly the target flow temperature rises as outside temperature falls.
@@ -3361,10 +3361,10 @@
                             <div class="valunit">
                                 <span class="value"></span>
                             </div>
-                            <input type="range" class="curveparam" min="0.1" max="3" step="0.05">
+                            <input type="range" class="curveparam" min="0.1" max="3" step="0.05" title="Suspend the circuit when the computed setpoint falls below this value">
                         </div>
                     </div>
-                    <div class="param linear-only range" field="heating.$.offset">
+                    <div class="param linear-only range" field="heating.$.offset" title="Constant shift added to every computed setpoint">
                         <h5>Offset</h5>
                         <div class="infobox">
                             Shifts the entire heating curve up or down by a fixed amount.
@@ -3380,10 +3380,10 @@
                                 <span class="value"></span>
                                 <span class="unit">K</span>
                             </div>
-                            <input type="range" class="curveparam" min="-15" max="15" step="0.5">
+                            <input type="range" class="curveparam" min="-15" max="15" step="0.5" title="Hysteresis around the setpoint, used to decide when the circuit is suspended again">
                         </div>
                     </div>
-                    <div class="param range" field="heating.$.returnLimit.deltaT">
+                    <div class="param range" field="heating.$.returnLimit.deltaT" title="Maximum allowed difference between flow and return temperature">
                         <h5>Returnlimit &Delta;T</h5>
                         <div class="infobox">
                             If the actual return temperature is above the return heatingcurve, a PI controller throttles the flow temperature.
@@ -3399,7 +3399,7 @@
                                 <span class="value"></span>
                                 <span class="unit">K</span>
                             </div>
-                            <input type="range" class="curveparam" min="0" max="15" step="1">
+                            <input type="range" class="curveparam" min="0" max="15" step="1" title="Hysteresis applied to the minimum-flow suspension, to stop it chattering">
                         </div>
                     </div>
                 </div>
@@ -3412,43 +3412,43 @@
                 <div class="flexline hero-pin-source">
                     <div class="statusfield nohide">
                         <h5>Outside temperature</h5>
-                        <span class="statusvalue" field="outsideTemp.current" unit="°C"></span>
+                        <span class="statusvalue" field="outsideTemp.current" unit="°C" title="Outside temperature currently in use"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Room setpoint</h5>
-                        <span class="statusvalue" field="heatercircuit.$.roomsetpoint" unit="°C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.roomsetpoint" unit="°C" title="Room setpoint for this circuit, after schedules, overrides and the room unit are combined"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Room temperature</h5>
-                        <span class="statusvalue" field="heatercircuit.$.roomtemp" unit="&deg;C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.roomtemp" unit="&deg;C" title="Room temperature measured for this circuit"></span>
                     </div>
                     <div class="statusfield" data-current-channel="0">
                         <h5>Flow temperature</h5>
-                        <span class="statusvalue" field="slave.flow_t" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t" unit="&deg;C" title="Central heating flow temperature measured by the appliance"></span>
                     </div>
                     <div class="statusfield CH2" data-current-channel="1" hidden>
                         <h5>Flow temperature</h5>
-                        <span class="statusvalue" field="slave.flow_t2" unit="&deg;C"></span>
+                        <span class="statusvalue" field="slave.flow_t2" unit="&deg;C" title="CH2 flow temperature, only reported when the appliance has a second circuit"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Flow setpoint</h5>
-                        <span class="statusvalue" field="heatercircuit.$.flowsetpoint" unit="&deg;C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.flowsetpoint" unit="&deg;C" title="Flow setpoint sent to this circuit, after the heating curve and room compensation"></span>
                     </div>
                     <div class="statusfield">
                         <h5>Return temperature</h5>
-                        <span class="statusvalue" field="heatercircuit.$.returnTemp" unit="&deg;C"></span>
+                        <span class="statusvalue" field="heatercircuit.$.returnTemp" unit="&deg;C" title="Return temperature for this circuit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>room comp. integrator</h5>
-                        <span class="statusvalue" field="heatercircuit.$.roomcompInteg" unit="K"></span>
+                        <span class="statusvalue" field="heatercircuit.$.roomcompInteg" unit="K" title="Accumulated integral term of the PI room compensation for this circuit"></span>
                     </div>
                     <div class="statusfield">
                         <h5>ret. limit reduction</h5>
-                        <span class="statusvalue" field="heatercircuit.$.reduction" unit="K"></span>
+                        <span class="statusvalue" field="heatercircuit.$.reduction" unit="K" title="Night-time reduction currently applied to this circuit"></span>
                     </div>
                     <div class="statusfield nohide">
                         <h5>Heating suspension</h5>
-                        <span class="statusvalue nohide" field="heatercircuit.$.suspended" data-suspension="summary" hidden>Unknown</span>
+                        <span class="statusvalue nohide" field="heatercircuit.$.suspended" data-suspension="summary" hidden title="This circuit is suspended, so no heat is requested">Unknown</span>
                         <div class="suspension-grid">
                             <div class="state-item">
                                 <span class="statusvalue state-icon is-unknown nohide" field="heatercircuit.$.suspItems.room" data-suspension="reason" data-suspension-label="Room temperature" role="img" title="Room-temperature control: unknown" aria-label="Room-temperature control: unknown"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ui-icon-unknown"></use></svg></span>
@@ -3482,8 +3482,8 @@
                             <tr class="empty-row"><td colspan="5">No markers yet. Add one to capture current outside and flow temperatures.</td></tr>
                         </tbody>
                     </table>
-                    <input id="comment" />
-                    <button onclick="addMarker()">+</button>
+                    <input id="comment" / title="Free-text note stored with this schedule block">
+                    <button onclick="addMarker()" title="Remove this schedule block" aria-label="Remove this schedule block">+</button>
                 </div>
             </div>
 
@@ -3494,7 +3494,7 @@
                         <h5>enable</h5>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" field="heating.$.schedule.enabled" onchange="if (window.drawScheduleTable) window.drawScheduleTable()" />
+                                <input type="checkbox" field="heating.$.schedule.enabled" onchange="if (window.drawScheduleTable) window.drawScheduleTable()" / title="Enable the weekly schedule for this circuit">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3551,11 +3551,11 @@
                     </div>
                     <div class="param">
                         <h5>room set</h5>
-                        <input id="schedRoom" type="number" min="10" max="30" step="0.1" value="21.0" />
+                        <input id="schedRoom" type="number" min="10" max="30" step="0.1" value="21.0" / title="Room setpoint applied while this schedule block is active">
                     </div>
                 </div>
                 <div class="flexline">
-                    <button id="scheduleAddBtn" onclick="addScheduleEntry()">add slot</button>
+                    <button id="scheduleAddBtn" onclick="addScheduleEntry()" title="Add a schedule block for this heating circuit" aria-label="Add a schedule block for this heating circuit">add slot</button>
                 </div>
                 <div id="scheduleEditHint" class="empty-state" hidden>editing slot</div>
             </div>
@@ -3570,52 +3570,52 @@
                     <div class="param">
                         <h5>Hostname</h5>
                         <div class="hostname-input">
-                            <input value="otthing" field="hostname" />
+                            <input value="otthing" field="hostname" / title="Hostname used for the access point and mDNS">
                             <span class="hostname-suffix">.local</span>
                         </div>
                     </div>
                 </div>
                 <h4>WiFi</h4>
-                <button id="wifiSetupBtn" onclick="openWifiSetup()">setup</button>
+                <button id="wifiSetupBtn" onclick="openWifiSetup()" title="Open the WiFi setup dialog" aria-label="Open the WiFi setup dialog">setup</button>
                 <h4>Web UI Login</h4>
                 <div class="flexline">
                     <div class="param">
                         <h5>Password</h5>
-                        <input id="authsetuppass" type="password" autocomplete="new-password" />
+                        <input id="authsetuppass" type="password" autocomplete="new-password" / title="Password for the device web interface">
                     </div>
                 </div>
-                <button onclick="saveWebAuthCredentials()">save credentials</button>
+                <button onclick="saveWebAuthCredentials()" title="Show or hide the WiFi password" aria-label="Show or hide the WiFi password">save credentials</button>
                 <h4>MQTT</h4>
                 <div class="flexline">
                     <div class="param">
                         <h5>Host</h5>
-                        <input field="mqtt.host"/>
+                        <input field="mqtt.host"/ title="Hostname or IP address of the MQTT broker">
                     </div>
                     <div class="param">
                         <h5>Port</h5>
-                        <input field="mqtt.port" intval/>
+                        <input field="mqtt.port" intval/ title="TCP port of the MQTT broker">
                     </div>
                     <div class="param">
                         <h5>Username</h5>
-                        <input field="mqtt.user"/>
+                        <input field="mqtt.user"/ title="Username for the MQTT broker">
                     </div>
                     <div class="param">
                         <h5>Password</h5>
-                        <input type="password" field="mqtt.pass"/>
+                        <input type="password" field="mqtt.pass"/ title="Password for the MQTT broker">
                     </div>
                     <div class="param">
                         <h5>Keep alive</h5>
-                        <input field="mqtt.keepAlive" intval value="15"/>
+                        <input field="mqtt.keepAlive" intval value="15"/ title="MQTT keepalive interval in seconds">
                     </div>
                     <div class="param">
                         <h5>HA disc. prefix</h5>
-                        <input field="haPrefix"/>
+                        <input field="haPrefix"/ title="Home Assistant discovery topic prefix">
                     </div>
                     <div class="param">
                         <h5>TLS</h5>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" field="mqtt.tls" />
+                                <input type="checkbox" field="mqtt.tls" / title="Connect to the MQTT broker over TLS">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3629,7 +3629,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>Mode</h5>
-                        <select id="otModeSelect" field="otMode" intval>
+                        <select id="otModeSelect" field="otMode" intval title="OpenTherm role: master, slave, repeater or bypass">
                             <option value="0">Bypass</option>
                             <option value="1">Master</option>
                             <option value="2">Repeater</option>
@@ -3639,13 +3639,13 @@
                     <div class="param otmode-master">
                         <h5>Enable slave interface</h5>
                         <label class="switch">
-                            <input type="checkbox" field="enableSlave" />
+                            <input type="checkbox" field="enableSlave" / title="Enable the OpenTherm slave port so a room unit can connect">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param">
                         <h5>Slave application</h5>
-                        <select id="slaveapp" field="slaveApp" intval>
+                        <select id="slaveapp" field="slaveApp" intval title="Application exposed on the OpenTherm slave port: heat/cool or ventilation">
                             <option value="0">heat/cool</option>
                             <option value="1">ventilation</option>
                         </select>
@@ -3657,82 +3657,82 @@
                     <div class="param">
                         <h5>Circuit 1</h5>
                         <label class="switch">
-                            <input type="checkbox" field="heating.0.chOn" />
+                            <input type="checkbox" field="heating.0.chOn" / title="Enable heating circuit 1">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param CH2" hidden>
                         <h5>Circuit 2</h5>
                         <label class="switch">
-                            <input type="checkbox" field="heating.1.chOn" />
+                            <input type="checkbox" field="heating.1.chOn" / title="Enable heating circuit 2 (only available if the appliance reports CH2)">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param cool">
                         <h5>Cooling</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.coolOn" />
+                            <input type="checkbox" field="boiler.coolOn" / title="Request cooling mode from the appliance; only sent if the appliance reports cooling support">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param DHW">
                         <h5>DHW</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.dhwOn" />
+                            <input type="checkbox" field="boiler.dhwOn" / title="Request domestic hot water from the appliance">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param">
                         <h5>OTC</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.otc" />
+                            <input type="checkbox" field="boiler.otc" / title="Outdoor reset curve control bit">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param">
                         <h5>summer mode</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.summerMode" />
+                            <input type="checkbox" field="boiler.summerMode" / title="Summer mode bit; many appliances drop the heating demand in summer">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="param DHW">
                         <h5>DHW blocking</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.dhwBlocking" />
+                            <input type="checkbox" field="boiler.dhwBlocking" / title="DHW blocking bit; tells the appliance not to heat for DHW">
                             <span class="slider"></span>
                         </label>
                     </div>
                 </div>
                 <div class="flexline app-heat">
-                    <div class="param range" field="boiler.maxModulation">
+                    <div class="param range" field="boiler.maxModulation" title="Maximum modulation requested from the appliance, as a percentage">
                         <h5>Max. modulation</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">%</span>
                             </div>
-                            <input type="range" min="0" max="100" step="1" />
+                            <input type="range" min="0" max="100" step="1" / title="Maximum modulation requested from the appliance, as a percentage">
                         </div>
                     </div>
-                    <div class="param range" field="boiler.chOffTemp">
+                    <div class="param range" field="boiler.chOffTemp" title="Flow temperature sent when the circuit is switched off, to protect the appliance">
                         <h5>CH off temp</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input type="range" min="0" max="20" step="1" />
+                            <input type="range" min="0" max="20" step="1" / title="Flow temperature sent when the circuit is switched off">
                         </div>
                     </div>
-                    <div class="param DHW range" field="boiler.dhwTemperature">
+                    <div class="param DHW range" field="boiler.dhwTemperature" title="DHW setpoint commanded to the appliance">
                         <h5>DHW set temperature</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">&deg;C</span>
                             </div>
-                            <input type="range" min="30" max="70" step="1" />
+                            <input type="range" min="30" max="70" step="1" / title="Maximum allowed difference between flow and return temperature">
                         </div>
                     </div>
                 </div>
@@ -3743,64 +3743,64 @@
                         <div class="param">
                             <h5>vent. enable</h5>
                             <label class="switch">
-                                <input type="checkbox" field="vent.ventEnable" />
+                                <input type="checkbox" field="vent.ventEnable" / title="Enable the connected ventilation unit">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="param">
                             <h5>open bypass</h5>
                             <label class="switch">
-                                <input type="checkbox" field="vent.openBypass" />
+                                <input type="checkbox" field="vent.openBypass" / title="Allow the bypass damper to open">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="param">
                             <h5>auto bypass</h5>
                             <label class="switch">
-                                <input type="checkbox" field="vent.autoBypass" />
+                                <input type="checkbox" field="vent.autoBypass" / title="Let the unit decide the bypass position automatically">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="param">
                             <h5>free vent. enable</h5>
                             <label class="switch">
-                                <input type="checkbox" field="vent.freeVentEnable" />
+                                <input type="checkbox" field="vent.freeVentEnable" / title="Enable continuous (free) ventilation instead of demand control">
                                 <span class="slider"></span>
                             </label>
                         </div>
                     </div>
-                    <div class="param range" field="vent.setpoint">
+                    <div class="param range" field="vent.setpoint" title="Requested relative ventilation position, as a percentage">
                         <h5>ventilation set point</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">%</span>
                             </div>
-                            <input type="range" min="0" max="100" step="1" />
+                            <input type="range" min="0" max="100" step="1" / title="Requested relative ventilation position, as a percentage">
                         </div>
                     </div>
                 </div>
 
                 <h4 class="otmode-master">Master settings</h4>
                 <div class="flexline otmode-master">
-                    <div class="param range" field="otDelay">
+                    <div class="param range" field="otDelay" title="Delay before the next OpenTherm request, in milliseconds">
                         <h5>master request delay</h5>
                         <div class="flexline">
                             <div class="valunit">
                                 <span class="value"></span>
                                 <span class="unit">ms</span>
                             </div>
-                            <input type="range" min="100" max="500" step="100" />
+                            <input type="range" min="100" max="500" step="100" / title="Delay before the next OpenTherm request, in milliseconds">
                         </div>
                     </div>
                     <div class="param">
                         <h5>Member ID</h5>
-                        <input field="masterMemberId" intval />
+                        <input field="masterMemberId" intval / title="MemberID code this controller reports for itself">
                     </div>
                     <div class="param">
                         <h5>no DHW set</h5>
                         <label class="switch">
-                            <input type="checkbox" field="noDhwSet" />
+                            <input type="checkbox" field="noDhwSet" / title="Never send a DHW setpoint to the appliance">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -3810,7 +3810,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>DHW control source</h5>
-                        <select field="boiler.dhwCtrlSource" intval>
+                        <select field="boiler.dhwCtrlSource" intval title="Where the DHW on/off decision comes from">
                             <option value="0">MQTT/HTTP</option>
                             <option value="1">roomunit</option>
                             <option value="2">auto</option>
@@ -3819,7 +3819,7 @@
                     <div class="param">
                         <h5>Exhaust float</h5>
                         <label class="switch">
-                            <input type="checkbox" field="boiler.texhaustAsFloat" />
+                            <input type="checkbox" field="boiler.texhaustAsFloat" / title="Read flue gas temperature as a float instead of a signed integer">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -3842,7 +3842,7 @@
                             <option value="0a00">reset service mode flag</option>
                             <option value="0c00">automatic hydronic air purge</option>
                         </select>
-                        <button onclick="sendOtRequest()">send</button>
+                        <button onclick="sendOtRequest()" title="Remove this schedule block" aria-label="Remove this schedule block">send</button>
                     </div>
                 </div>
             </div>
@@ -3854,7 +3854,7 @@
                         <h5>enable</h5>
                         <div>
                             <label class="switch">
-                                <input type="checkbox" field="boiler.dhwSchedule.enabled" onchange="if (window.drawDhwScheduleTable) window.drawDhwScheduleTable()" />
+                                <input type="checkbox" field="boiler.dhwSchedule.enabled" onchange="if (window.drawDhwScheduleTable) window.drawDhwScheduleTable()" / title="Enable the DHW schedule">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -3911,11 +3911,11 @@
                     </div>
                     <div class="param">
                         <h5>setpoint</h5>
-                        <input id="dhwSchedSetpoint" type="number" min="30" max="70" step="1" value="50" />
+                        <input id="dhwSchedSetpoint" type="number" min="30" max="70" step="1" value="50" / title="DHW setpoint applied while this schedule block is active">
                     </div>
                 </div>
                 <div class="flexline">
-                    <button id="dhwScheduleAddBtn" onclick="addDhwScheduleEntry()">add slot</button>
+                    <button id="dhwScheduleAddBtn" onclick="addDhwScheduleEntry()" title="Add a schedule block for domestic hot water" aria-label="Add a schedule block for domestic hot water">add slot</button>
                 </div>
                 <div id="dhwScheduleEditHint" class="empty-state" hidden>editing slot</div>
             </div>
@@ -3925,7 +3925,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>Source</h5>
-                        <select id="selectOutsideTempSource" field="outsideTemp.source" hideele="owdiv" hideelevalue="4" id-options="ostsource-options" intval>
+                        <select id="selectOutsideTempSource" field="outsideTemp.source" hideele="owdiv" hideelevalue="4" id-options="ostsource-options" intval title="Whether the outside temperature comes from OpenTherm, MQTT or a sensor">
                             <option value="0">MQTT</option>
                             <option value="1">OT slave</option>
                             <option value="2">Bluetooth</option>
@@ -3944,29 +3944,29 @@
                         <div class="param"></div>
                         <div class="param">
                             <h5>Address</h5>
-                            <input field="outsideTemp.adr"/>
+                            <input field="outsideTemp.adr"/ title="OneWire address of the outside temperature sensor">
                         </div>
                         <div class="param">
                             <h5>address</h5>
-                            <select class="oneWireAdr" field="outsideTemp.adr">
+                            <select class="oneWireAdr" field="outsideTemp.adr" title="OneWire address of the outside temperature sensor">
                             </select>
                         </div>
                         <div class="flexline">
                             <div class="param">
                                 <h5>API key</h5>
-                                <input type="password" field="outsideTemp.apikey"/>
+                                <input type="password" field="outsideTemp.apikey"/ title="API key for the online outside temperature provider">
                             </div>
                             <div class="param">
                                 <h5>latitude</h5>
-                                <input field="outsideTemp.lat" floatval />
+                                <input field="outsideTemp.lat" floatval / title="Latitude used for the sunrise and sunset calculations">
                             </div>
                             <div class="param">
                                 <h5>longitude</h5>
-                                <input field="outsideTemp.lon" floatval />
+                                <input field="outsideTemp.lon" floatval / title="Longitude used for the sunrise and sunset calculations">
                             </div>
                             <div class="param">
                                 <h5>interval / s</h5>
-                                <input field="outsideTemp.interval" intval />
+                                <input field="outsideTemp.interval" intval / title="How often the outside temperature is polled, in minutes">
                             </div>
                         </div>
                     </div>
@@ -3979,7 +3979,7 @@
                 <div class="flexline">
                     <div class="param">
                         <h5>aux 1 (DQ)</h5>
-                        <select id="aux0mode" field="aux.0.mode" hideele="aux0role" hideelevalue="1" intval>
+                        <select id="aux0mode" field="aux.0.mode" hideele="aux0role" hideelevalue="1" intval title="Operating mode of auxiliary input 1">
                             <option value="0">unused</option>
                             <option value="1">digital</option>
                             <option value="3">analog</option>
@@ -3987,7 +3987,7 @@
                         </select>
                         <div id="aux0role" hidden>
                             <h5>role</h5>
-                            <select field="aux.0.digitalRole" intval>
+                            <select field="aux.0.digitalRole" intval title="Function assigned to auxiliary input 1 when used as a digital input">
                                 <option value="0">none</option>
                                 <option value="1">demand CH 1</option>
                                 <option value="2">demand CH 2</option>
@@ -3998,14 +3998,14 @@
                     </div>
                     <div class="param">
                         <h5>aux. 2 (DI)</h5>
-                        <select id="aux1mode" field="aux.1.mode" hideele="aux1role" hideelevalue="1" intval>
+                        <select id="aux1mode" field="aux.1.mode" hideele="aux1role" hideelevalue="1" intval title="Operating mode of auxiliary input 2">
                             <option value="0">unused</option>
                             <option value="1">digital</option>
                             <option value="4">1wire</option>
                         </select>
                         <div id="aux1role" hidden>
                             <h5>role</h5>
-                            <select field="aux.1.digitalRole" intval>
+                            <select field="aux.1.digitalRole" intval title="Function assigned to auxiliary input 2 when used as a digital input">
                                 <option value="0">none</option>
                                 <option value="1">demand CH 1</option>
                                 <option value="2">demand CH 2</option>
@@ -4017,7 +4017,7 @@
                 </div>
                 
                 <h4>Timezone</h4>
-                <select field="timezone" intval>
+                <select field="timezone" intval title="Time zone used for schedules and timestamps">
                     <option value="0">UTC</option>
                     <option value="3600">UTC + 1</option>
                     <option value="7200">UTC + 2</option>
@@ -4028,25 +4028,25 @@
                     <a href="https://github.com/Phunkafizer/OT-Thing/releases/latest" target="_blank" rel="noopener noreferrer">Latest release on GitHub</a>
                 </div>
                 <form id="form_update" method='POST' enctype='multipart/form-data'>
-                    <input id="firmware_file" type='file' accept='.bin,.bin.gz' name='firmware' hidden>
-                    <button id="btn_update" type="button">update...</button>
+                    <input id="firmware_file" type='file' accept='.bin,.bin.gz' name='firmware' hidden title="Firmware image to upload">
+                    <button id="btn_update" type="button" title="Upload a firmware image to the device" aria-label="Upload a firmware image to the device">update...</button>
                     <div id="progressDiv" class="progress" hidden>
                         <div id="progressText"></div>
                         <progress id="updprogress" max="100" value="0"></progress>
                     </div>
                 </form>
-                <input id="restore_file" type="file" accept=".json" style="display: none;">
+                <input id="restore_file" type="file" accept=".json" style="display: none;" title="Settings backup file to restore">
             </div>
         </div>
         <div class="tab" id="log">
             <div class="toolbar log-toolbar">
                 <span id="logReconnectHint" hidden>reconnecting...</span>
                 <div class="log-toolbar-controls">
-                    <button onclick="clearLog()">clear log</button>
+                    <button onclick="clearLog()" title="Choose which log levels to display" aria-label="Choose which log levels to display">clear log</button>
                     <div style="display:flex; align-items:center; gap:0.5em;">
                         <span>autoscroll</span>
                         <label class="switch log-switch" style="margin:0;">
-                            <input id="logAutoscroll" type="checkbox" checked onchange="toggleAutoScroll(this)">
+                            <input id="logAutoscroll" type="checkbox" checked onchange="toggleAutoScroll(this)" title="Keep the log view scrolled to the newest entry">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -4057,10 +4057,10 @@
             </div>
         </div>
         <div class="toolbar" id="globalToolbar" hidden>
-            <button onclick="saveConfig()">save</button>
-            <button onclick="importConfig()">import config</button>
+            <button onclick="saveConfig()" title="Scan for WiFi networks" aria-label="Scan for WiFi networks">save</button>
+            <button onclick="importConfig()" title="Connect using the entered WiFi credentials" aria-label="Connect using the entered WiFi credentials">import config</button>
             <div style="display:flex; align-items:center; gap:0.4em;">
-                <button onclick="exportItem()">export</button>
+                <button onclick="exportItem()" title="Cancel and close WiFi setup" aria-label="Cancel and close WiFi setup">export</button>
                 <select id="selExport">
                     <option>config</option>
                     <option>status</option>
@@ -4069,7 +4069,7 @@
                     <option>OT items</option>
                 </select> 
             </div>
-            <button onclick="reboot()">reboot</button>
+            <button onclick="reboot()" title="Apply the entered WiFi settings" aria-label="Apply the entered WiFi settings">reboot</button>
         </div>
         <div class="event-row" id="recentEvents">
             <span class="event-empty">No recent actions yet.</span>
@@ -4083,7 +4083,7 @@
             </div>
             <pre id="modalBody"></pre>
             <div class="modal-footer">
-                <button onclick="closeModal()">close</button>
+                <button onclick="closeModal()" title="Disconnect from the current WiFi network" aria-label="Disconnect from the current WiFi network">close</button>
             </div>
         </div>
     </div>
@@ -4099,17 +4099,17 @@
                 <div id="wifiScanList" class="wifi-scan-list" hidden></div>
                 <div class="param">
                     <h5>SSID</h5>
-                    <input id="wifissid" />
+                    <input id="wifissid" / title="Name of the WiFi network to join">
                 </div>
                 <div class="param">
                     <h5>Password</h5>
-                    <input id="wifipass" type="password" autocomplete="new-password" />
+                    <input id="wifipass" type="password" autocomplete="new-password" / title="Password for the WiFi network">
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="saveWifi()">save</button>
-                <button id="wifiRescanBtn" type="button" onclick="startWifiScan()">scan</button>
-                <button onclick="closeWifiSetup()">close</button>
+                <button onclick="saveWifi()" title="Show the WiFi password" aria-label="Show the WiFi password">save</button>
+                <button id="wifiRescanBtn" type="button" onclick="startWifiScan()" title="Scan again for WiFi networks" aria-label="Scan again for WiFi networks">scan</button>
+                <button onclick="closeWifiSetup()" title="Forget the stored WiFi network and reopen setup" aria-label="Forget the stored WiFi network and reopen setup">close</button>
             </div>
         </div>
     </div>
@@ -4126,7 +4126,7 @@
                             <span class="value" id="turboShiftVal">5</span>
                             <span class="unit">&deg;C</span>
                         </div>
-                        <input id="turboShift" type="range" min="1" max="15" step="1" value="5" oninput="_('#turboShiftVal').textContent = this.value">
+                        <input id="turboShift" type="range" min="1" max="15" step="1" value="5" oninput="_('#turboShiftVal').textContent = this.value" title="Temporary shift applied to the flow setpoint by the turbo function">
                     </div>
                 </div>
                 <div class="param range">
@@ -4136,13 +4136,13 @@
                             <span class="value" id="turboDurationVal">60</span>
                             <span class="unit">min</span>
                         </div>
-                        <input id="turboDuration" type="range" min="0" max="120" step="5" value="60" oninput="_('#turboDurationVal').textContent = this.value">
+                        <input id="turboDuration" type="range" min="0" max="120" step="5" value="60" oninput="_('#turboDurationVal').textContent = this.value" title="How long the turbo shift stays active, in minutes">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" onclick="sendTurbo()">turbo</button>
-                <button type="button" onclick="closeTurboDialog()">close</button>
+                <button type="button" onclick="sendTurbo()" title="Show the web interface password" aria-label="Show the web interface password">turbo</button>
+                <button type="button" onclick="closeTurboDialog()" title="Hide the web interface password" aria-label="Hide the web interface password">close</button>
             </div>
         </div>
     </div>
@@ -4154,11 +4154,11 @@
             <div class="auth-login-body">
                 <div class="auth-hint">Login is required to access OTthing configuration and live status.</div>
                 <h5>Password</h5>
-                <input id="authLoginPass" type="password" autocomplete="current-password" />
+                <input id="authLoginPass" type="password" autocomplete="current-password" / title="Password for the device web interface">
                 <div id="authLoginError"></div>
             </div>
             <div class="modal-footer">
-                <button id="authLoginBtn" onclick="performLogin()">login</button>
+                <button id="authLoginBtn" onclick="performLogin()" title="Log in to the device web interface" aria-label="Log in to the device web interface">login</button>
             </div>
         </div>
     </div>
