@@ -1154,6 +1154,17 @@ bool OTControl::isCoolingAssumed() const {
     return boilerConfig.assumeCooling;
 }
 
+void OTControl::repollCapabilities() {
+    OTValue::slaveConfig->unset();
+    if (OTValue::ventSlaveConfig != nullptr)
+        OTValue::ventSlaveConfig->unset();
+
+    // Capability answers gate which entities exist, so discovery has to run
+    // again once the new values land.
+    discFlag = false;
+    portal.textAll(F("OT capability re-poll requested"));
+}
+
 void OTControl::setTurboShift(const double shift, const uint8_t channel) {
     chcontrol[channel].turbo.shift = shift;
 }

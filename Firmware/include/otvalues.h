@@ -362,6 +362,9 @@ public:
     bool hasDHW() const;
     bool hasCh(const uint8_t ch) const;
     bool hasCooling() const;
+    // Raw decoded slave-config word. Note getValue(JsonVariant) in this class
+    // hides OTValue's getValue() getter, so the raw word needs its own name.
+    uint16_t rawValue() const { return value; }
 };
 
 class OTValueVentSlaveConfigMember: public OTValueFlags {

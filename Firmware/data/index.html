@@ -3682,6 +3682,11 @@
                             <span class="slider"></span>
                         </label>
                     </div>
+                    <div class="param">
+                        <h5>Re-poll capabilities</h5>
+                        <button id="btnRepollCaps" type="button" onclick="repollCapabilities()" title="Ask the appliance again for its capability flags (DHW, cooling, second circuit). These are normally read once at start-up, so a heat pump that only advertises cooling while it is in cooling mode stays hidden until this is run." aria-label="Re-poll appliance capability flags">re-poll...</button>
+                        <div class="subtext" id="repollCapsInfo"></div>
+                    </div>
                     <div class="param DHW">
                         <h5>DHW</h5>
                         <label class="switch">
@@ -7090,6 +7095,43 @@
                 .catch((err) => {
                     showToast("Error setting room mode:\n" + err.message, "error", 5000);
                     addRecentEvent("Room mode update failed");
+                });
+        }
+
+        function repollCapabilities() {
+            const btn = _("#btnRepollCaps");
+            const info = _("#repollCapsInfo");
+            if (btn)
+                btn.disabled = true;
+            if (info)
+                info.textContent = "requesting…";
+
+            fetch("/repollcaps")
+                .then((resp) => {
+                    if (!resp.ok)
+                        throw new Error("HTTP " + resp.status);
+                    return resp.json();
+                })
+                .then((data) => {
+                    // The re-read is queued and happens on a later pass of the
+                    // device main loop, so the fresh value only shows up on the
+                    // next status poll. Say so instead of implying it is done.
+                    if (info)
+                        info.textContent = "queued — the values below refresh on the next status update";
+                    showToast("Capability re-poll queued", "success", 3000);
+                    addRecentEvent("Capability re-poll requested");
+                    if (data && (data.before !== undefined))
+                        console.log("slave_config_member before re-poll:", data.before);
+                })
+                .catch((err) => {
+                    if (info)
+                        info.textContent = "failed: " + err.message;
+                    showToast("Error requesting capability re-poll:\n" + err.message, "error", 5000);
+                    addRecentEvent("Capability re-poll failed");
+                })
+                .finally(() => {
+                    if (btn)
+                        btn.disabled = false;
                 });
         }
 

@@ -347,6 +347,28 @@ void Portal::begin(bool configMode) {
         request->send(response);
     });
 
+    websrv.on(PSTR("/repollcaps"), HTTP_GET, [this] (AsyncWebServerRequest *request) {
+        if (!ensureAuthorized(request))
+            return;
+
+        AsyncJsonResponse *response = new AsyncJsonResponse();
+        JsonDocument doc = response->getRoot();
+        JsonObject jobj = doc.to<JsonObject>();
+
+        // Values as currently cached, so the caller can tell what changed.
+        JsonObject jSlave = jobj[F("before")].to<JsonObject>();
+        jSlave[F("memberId")] = (int) (OTValue::slaveConfig->rawValue() & 0xFF);
+        jSlave[F("value")] = String(OTValue::slaveConfig->rawValue(), HEX);
+
+        otcontrol.repollCapabilities();
+
+        // The re-read is queued, not synchronous: OTValue::process() picks it up
+        // on a later pass of the main loop. Callers should re-read /status.
+        jobj[F("scheduled")] = true;
+        response->setLength();
+        request->send(response);
+    });
+
     websrv.on(PSTR("/reboot"), HTTP_GET, [this](AsyncWebServerRequest *request) {
         if (!ensureAuthorized(request))
             return;

@@ -129,6 +129,19 @@ public:
     void setDhwCtrlMode(const HADiscovery::ClimateMode mode);
     void setCoolingMode(const bool on);
     void setCoolingCtrl(const int ctrl);
+    // Re-read the slave capability words on the next poll cycle.
+    //
+    // Both slave-config values are queried with interval 0, i.e. once, the first
+    // time a reply arrives (see OTValue::process). That is fine for a fixed
+    // capability but wrong for appliances whose reported capability depends on
+    // their current mode or the season: a heat pump that only advertises cooling
+    // while it is in cooling mode would be latched as "no cooling" until a
+    // reboot. unset() clears setFlag so process() asks again; clearing discFlag
+    // makes discovery re-run so Home Assistant entities follow the new answer.
+    //
+    // The re-read happens asynchronously in the main loop, so callers should
+    // re-read /status rather than expect a fresh value in the same call.
+    void repollCapabilities();
     // Public accessor: hasCooling() lives in a class derived from OTValue, and
     // friendship granted to OTValue is not inherited, so it cannot read
     // boilerConfig directly.
