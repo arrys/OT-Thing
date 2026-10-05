@@ -778,7 +778,11 @@ bool OTValueSlaveConfigMember::hasCh(const uint8_t ch) const {
 }
 
 bool OTValueSlaveConfigMember::hasCooling() const {
-    return isSet() && ((value & (1<<10)) != 0);
+    // Bit 2 of the slave configuration flags, unless the user has declared the
+    // appliance capable of cooling. Some heat pumps (e.g. Brötje MONO AWHP 11 TR,
+    // which documents 10 kW cooling at A35/W18) leave this bit clear even though
+    // they can reverse, so the bit alone under-reports the capability.
+    return (isSet() && ((value & (1<<10)) != 0)) || otcontrol.isCoolingAssumed();
 }
 
 bool OTValueSlaveConfigMember::sendDiscovery() {

@@ -29,6 +29,10 @@ void CHcontrol::setConfig(JsonObject &obj, const bool init) {
     config.roomComp.p = rc[F("p")] | 0.0;
     config.roomComp.i = rc[F("i")] | 0.0;
     config.roomComp.boost = rc[F("boost")] | 3.0;
+    // config.roomComp.enabled used to be stored but never consulted: the actual
+    // gate is roomCompEnabled(), which reads roomComp.mode. Apply the stored flag
+    // to it so the checkbox actually controls compensation.
+    roomComp.mode = config.roomComp.enabled ? HADiscovery::MODE_AUTO : HADiscovery::MODE_OFF;
     
     config.roomSuspend.hysteresis = obj[FPSTR(STR_CONFKEY_HYSTERESIS)] | 0.2;
     config.roomSuspend.offset = obj[F("suspOffset")] | 0.0;
@@ -221,7 +225,11 @@ bool CHcontrol::getChOn() {
     if ((mode == HADiscovery::MODE_AUTO) && (millis() < 300000UL) && !outsideTemp)
         return false;
 
-    if ( (mode == HADiscovery::MODE_OFF) || (roomComp.mode == HADiscovery::MODE_OFF) || (getFlow() == 0.0) )
+    // roomComp.mode is the room-compensation mode, not a demand signal. getFlow()
+    // already omits the compensation offset when it is off, so gating the whole
+    // circuit on it here would switch heating off entirely whenever room
+    // compensation was disabled (e.g. a retained MQTT roomMode1=off).
+    if ( (mode == HADiscovery::MODE_OFF) || (getFlow() == 0.0) )
         return false;
 
     if (config.roomSuspend.enabled && roomSuspended)
@@ -252,6 +260,9 @@ void CHcontrol::setFlowTemp(const double temp, const Sensor::Source src) {
 void CHcontrol::setRoomComp(const HADiscovery::ClimateMode mode) {
     const bool oldEnabled = roomCompEnabled();
     roomComp.mode = mode;
+    // Mirror into the config struct so the settings checkbox reflects a mode
+    // changed over MQTT/HA instead of silently disagreeing with it.
+    config.roomComp.enabled = roomCompEnabled();
     if (oldEnabled != roomCompEnabled()) {
         roomComp.integState = 0;
         roomComp.deltaT = 0;

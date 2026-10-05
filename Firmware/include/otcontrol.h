@@ -67,6 +67,10 @@ private:
     struct {
         bool otc;
         double chOffTemp;
+        // Some heat pumps can cool but leave slave-config bit 2 (cooling config)
+        // clear, so the capability cannot be trusted on its own. Set from config
+        // to assume cooling support for such appliances.
+        bool assumeCooling {false};
     } boilerConfig;
     struct {
         uint8_t maxModulation;
@@ -125,6 +129,10 @@ public:
     void setDhwCtrlMode(const HADiscovery::ClimateMode mode);
     void setCoolingMode(const bool on);
     void setCoolingCtrl(const int ctrl);
+    // Public accessor: hasCooling() lives in a class derived from OTValue, and
+    // friendship granted to OTValue is not inherited, so it cannot read
+    // boilerConfig directly.
+    bool isCoolingAssumed() const;
     bool sendDiscovery();
     bool sendCapDiscoveries();
     void forceFlowCalc(const uint8_t channel);

@@ -1150,6 +1150,10 @@ void OTControl::setCoolingMode(const bool on) {
     boilerCtrl.coolOn = on;
 }
 
+bool OTControl::isCoolingAssumed() const {
+    return boilerConfig.assumeCooling;
+}
+
 void OTControl::setTurboShift(const double shift, const uint8_t channel) {
     chcontrol[channel].turbo.shift = shift;
 }
@@ -1209,6 +1213,13 @@ void OTControl::setConfig(JsonObject &config) {
     if (!init)
         boilerCtrl.coolingCtrl = 0;
     boilerConfig.chOffTemp = boiler[F("chOffTemp")] | 10.0;
+    // Honour a manual override of the slave-reported cooling capability, and
+    // re-publish discovery when it changes so HA entities follow.
+    const bool assumeCooling = boiler[F("assumeCooling")] | false;
+    if (assumeCooling != boilerConfig.assumeCooling) {
+        boilerConfig.assumeCooling = assumeCooling;
+        discFlag = false;
+    }
     OTValue::setTexhaustAsFloat(boiler[F("texhaustAsFloat")] | false);
 
     masterMemberId = config[F("masterMemberId")] | 22;
