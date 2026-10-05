@@ -559,6 +559,17 @@ void OTControl::OnRxMaster(const unsigned long msg, const OpenThermResponseStatu
         c = (newMsg == msg) ? 'B' : 'A';
     master.onReceive(c, newMsg);
 
+    // Mirror OnRxSlave(): a frame that failed the parity/format check carries
+    // arbitrary bits in its data field, so it must not be latched into the
+    // OTValue caches or the temperature sensors. Slave config is polled only
+    // once (interval 0) and sendDiscovery() runs inside that single setValue(),
+    // so one bad frame would pin the DHW/cooling/CH2 capability at "absent"
+    // until a reboot or OT mode change.
+    if (status == OpenThermResponseStatus::INVALID) {
+        master.invalidCount++;
+        return;
+    }
+
     if (otval) {
         otval->setValue(mt, newMsg & 0xFFFF);
         switch (mt) {
@@ -957,6 +968,7 @@ void OTControl::getJson(JsonObject &obj) {
     JsonObject jMaster = obj[FPSTR(STR_STATKEY_MASTER)].to<JsonObject>();
     jMaster[FPSTR(STR_STATKEY_TXCOUNT)] = master.txCount;
     jMaster[FPSTR(STR_STATKEY_RXCOUNT)] = master.rxCount;
+    jMaster[F("invalidCount")] = master.invalidCount;
     if ( (otMode == OTMODE_MASTER) || (otMode == OTMODE_LOOPBACKTEST) )
         jMaster[F("timeouts")] = master.timeoutCount;
     for (auto *valobj: masterValues)
@@ -1001,17 +1013,23 @@ void OTControl::getJson(JsonObject &obj) {
         JsonObject jDhw = obj[FPSTR(STR_STATKEY_DHW)].to<JsonObject>();
         dhwControl.getJson(jDhw);
 
-        JsonObject jCooling = obj[FPSTR(STR_STATKEY_COOLING)].to<JsonObject>();
-        jCooling[FPSTR(STR_STATKEY_CTRLMODE)] = boilerCtrl.coolOn;
-        jCooling[FPSTR(STR_STATKEY_SETPOINT)] = boilerCtrl.coolingCtrl;
-        if (boilerCtrl.coolOn) {
-            if (OTValue::status->getCoolingActive())
-                jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_COOLING);
+        // Only advertise cooling state when the heat pump actually signals the
+        // capability (slave config bit 10). SLAVEAPP_HEATCOOL is the default app
+        // and every heat pump has the heating channel, so it cannot stand in for
+        // cooling -- only some heat pumps can actually cool.
+        if (OTValue::slaveConfig->hasCooling()) {
+            JsonObject jCooling = obj[FPSTR(STR_STATKEY_COOLING)].to<JsonObject>();
+            jCooling[FPSTR(STR_STATKEY_CTRLMODE)] = boilerCtrl.coolOn;
+            jCooling[FPSTR(STR_STATKEY_SETPOINT)] = boilerCtrl.coolingCtrl;
+            if (boilerCtrl.coolOn) {
+                if (OTValue::status->getCoolingActive())
+                    jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_COOLING);
+                else
+                    jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_IDLE);
+            }
             else
-                jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_IDLE);
+                jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_OFF);
         }
-        else
-            jCooling[FPSTR(STR_STATKEY_ACTION)] = FPSTR(HA_ACTION_OFF);
             
         break;
     }

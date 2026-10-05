@@ -767,18 +767,18 @@ void OTValueSlaveConfigMember::getValue(JsonVariant var) const {
 }
 
 bool OTValueSlaveConfigMember::hasDHW() const {
-    return (value & (1<<8)) != 0;
+    return isSet() && ((value & (1<<8)) != 0);
 }
 
 bool OTValueSlaveConfigMember::hasCh(const uint8_t ch) const {
     if (ch == 1)
-        return (value & (1<<13)) != 0;
+        return isSet() && ((value & (1<<13)) != 0);
     else
-        return true;
+        return true; // CH1 (heating) is assumed present; not signalled by the slave
 }
 
 bool OTValueSlaveConfigMember::hasCooling() const {
-    return (value & (1<<10)) != 0;
+    return isSet() && ((value & (1<<10)) != 0);
 }
 
 bool OTValueSlaveConfigMember::sendDiscovery() {

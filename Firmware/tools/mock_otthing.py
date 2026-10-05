@@ -36,7 +36,7 @@ mock_control = {"status_enabled": True}
 # Mirrors loopbackTestData[] in src/otcontrol.cpp.
 TESTDATA_ITEMS = {
     "status": 0x0000,
-    "slave_config_member": 0x0129,
+    "slave_config_member": 0x2501,
     "slave_config_member_ventilation": 0x0107,
     "faultflags": 0x0000,
     "remote_parameter_flags": 0x0101,

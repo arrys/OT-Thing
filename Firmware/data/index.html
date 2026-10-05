@@ -8973,11 +8973,14 @@
 
                 applyAppVisibility();
 
-                if (statuscache.slave?.slave_config_member?.cooling_config === false) {
-                    __(".cool").forEach(ele => {
-                        ele.hidden = true;
-                    });
-                }
+                // Two-way and consistent with applyAppVisibility()'s CH2 handling: show cooling
+                // only while the capability bit is positively confirmed. Assigning
+                // hidden unconditionally makes this self-healing instead of a
+                // one-way latch that can never be undone.
+                const coolingSupported = statuscache.slave?.slave_config_member?.cooling_config === true;
+                __(".cool").forEach(ele => {
+                    ele.hidden = !coolingSupported;
+                });
 
                 _("#roomunit").hidden = (statuscache.roomunit == null);
 
